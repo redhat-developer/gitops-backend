@@ -1,0 +1,40 @@
+package git
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/bigkevmcd/gitops-backend/pkg/metrics"
+	"github.com/jenkins-x/go-scm/scm"
+)
+
+// New creates and returns a new SCMClient.
+func New(c *scm.Client, m metrics.Interface) *SCMClient {
+	return &SCMClient{client: c, m: m}
+}
+
+// SCMClient is a wrapper for the go-scm scm.Client with a simplified API.
+type SCMClient struct {
+	client *scm.Client
+	m      metrics.Interface
+}
+
+// FileContents reads the specific revision of a file from a repository.
+//
+// If an HTTP error is returned by the upstream service, an error with the
+// response status code is returned.
+func (c *SCMClient) FileContents(ctx context.Context, repo, path, ref string) ([]byte, error) {
+	content, r, err := c.client.Contents.Find(ctx, repo, path, ref)
+	c.m.CountAPICall("file_contents")
+	if isErrorStatus(r.Status) {
+		return nil, scmError{msg: fmt.Sprintf("failed to get file %s from repo %s ref %s", path, repo, ref), Status: r.Status}
+	}
+	if err != nil {
+		return nil, err
+	}
+	return content.Data, nil
+}
+
+func isErrorStatus(i int) bool {
+	return i >= 400
+}
