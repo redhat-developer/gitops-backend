@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/bigkevmcd/gitops-backend/pkg/metrics"
+	"github.com/rhd-gitops-examples/gitops-backend/pkg/metrics"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 

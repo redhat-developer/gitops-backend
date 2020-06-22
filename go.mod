@@ -1,4 +1,4 @@
-module github.com/bigkevmcd/gitops-backend
+module github.com/rhd-gitops-examples/gitops-backend
 
 go 1.14
 
@@ -32,6 +32,10 @@ require (
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
 	gopkg.in/ini.v1 v1.52.0 // indirect
 	gopkg.in/yaml.v2 v2.3.0 // indirect
-	k8s.io/apimachinery v0.17.6 // indirect
-	sigs.k8s.io/yaml v1.1.0
+	k8s.io/api v0.18.4
+	k8s.io/apimachinery v0.18.4
+	k8s.io/client-go v0.18.4
+	k8s.io/kube-openapi v0.0.0-20200410145947-bcb3869e6f29 // indirect
+	k8s.io/utils v0.0.0-20200619165400-6e3d28b6ed19 // indirect
+	sigs.k8s.io/yaml v1.2.0
 )

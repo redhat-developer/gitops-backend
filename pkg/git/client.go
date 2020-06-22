@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/bigkevmcd/gitops-backend/pkg/metrics"
+	"github.com/rhd-gitops-examples/gitops-backend/pkg/metrics"
 	"github.com/jenkins-x/go-scm/scm"
 )
 

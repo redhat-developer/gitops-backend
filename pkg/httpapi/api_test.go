@@ -10,17 +10,16 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bigkevmcd/gitops-backend/pkg/git"
-	"github.com/bigkevmcd/gitops-backend/test"
+	"github.com/rhd-gitops-examples/gitops-backend/pkg/git"
+	"github.com/rhd-gitops-examples/gitops-backend/pkg/httpapi/secrets"
+	"github.com/rhd-gitops-examples/gitops-backend/test"
 	"github.com/google/go-cmp/cmp"
 	"sigs.k8s.io/yaml"
 )
 
 func TestGetPipelines(t *testing.T) {
-	c := newClient()
+	ts, c := makeServer(t)
 	c.addContents("example/gitops", "pipelines.yaml", "master", "testdata/pipelines.yaml")
-	ts := httptest.NewTLSServer(AuthenticationMiddleware(NewRouter(c)))
-	t.Cleanup(ts.Close)
 	pipelinesURL := "https://github.com/example/gitops.git"
 
 	req := makeClientRequest(t, "Bearer testing", fmt.Sprintf("%s/pipelines?url=%s", ts.URL, pipelinesURL))
@@ -40,10 +39,7 @@ func TestGetPipelines(t *testing.T) {
 }
 
 func TestGetPipelinesWithNoURL(t *testing.T) {
-	c := newClient()
-	ts := httptest.NewTLSServer(AuthenticationMiddleware(NewRouter(c)))
-	t.Cleanup(ts.Close)
-
+	ts, _ := makeServer(t)
 	req := makeClientRequest(t, "Bearer testing", fmt.Sprintf("%s/pipelines", ts.URL))
 	res, err := ts.Client().Do(req)
 	if err != nil {
@@ -53,11 +49,8 @@ func TestGetPipelinesWithNoURL(t *testing.T) {
 }
 
 func TestGetPipelinesWithBadURL(t *testing.T) {
-	c := newClient()
+	ts, c := makeServer(t)
 	c.addContents("example/gitops", "pipelines.yaml", "master", "testdata/pipelines.yaml")
-	ts := httptest.NewTLSServer(AuthenticationMiddleware(NewRouter(c)))
-	t.Cleanup(ts.Close)
-
 	req := makeClientRequest(t, "Bearer testing", fmt.Sprintf("%s/pipelines?url=%%%%test.html", ts.URL))
 	res, err := ts.Client().Do(req)
 	if err != nil {
@@ -71,16 +64,22 @@ func TestGetPipelinesWithPrivateRepoAndNoCredentials(t *testing.T) {
 }
 
 func TestGetPipelinesWithNoAuthorizationHeader(t *testing.T) {
-	c := newClient()
-	ts := httptest.NewTLSServer(AuthenticationMiddleware(NewRouter(c)))
-	t.Cleanup(ts.Close)
-
+	ts, _ := makeServer(t)
 	req := makeClientRequest(t, "", fmt.Sprintf("%s/pipelines", ts.URL))
+
 	res, err := ts.Client().Do(req)
 	if err != nil {
 		t.Fatal(err)
 	}
 	assertHTTPError(t, res, http.StatusForbidden, "Authentication required")
+}
+
+func makeServer(t *testing.T) (*httptest.Server, *stubClient) {
+	s := secrets.NewMock()
+	c := newClient()
+	ts := httptest.NewTLSServer(AuthenticationMiddleware(NewRouter(c, s)))
+	t.Cleanup(ts.Close)
+	return ts, c
 }
 
 // TODO: assert the content-type.
