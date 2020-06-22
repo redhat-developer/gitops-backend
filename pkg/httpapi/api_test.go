@@ -13,72 +13,79 @@ import (
 	"github.com/bigkevmcd/gitops-backend/pkg/git"
 	"github.com/bigkevmcd/gitops-backend/test"
 	"github.com/google/go-cmp/cmp"
+	"sigs.k8s.io/yaml"
 )
 
 func TestGetPipelines(t *testing.T) {
 	c := newClient()
 	c.addContents("example/gitops", "pipelines.yaml", "master", "testdata/pipelines.yaml")
-	ts := httptest.NewTLSServer(NewRouter(c))
+	ts := httptest.NewTLSServer(AuthenticationMiddleware(NewRouter(c)))
 	t.Cleanup(ts.Close)
 	pipelinesURL := "https://github.com/example/gitops.git"
 
-	res, err := ts.Client().Get(fmt.Sprintf("%s/pipelines?url=%s", ts.URL, pipelinesURL))
+	req := makeClientRequest(t, "Bearer testing", fmt.Sprintf("%s/pipelines?url=%s", ts.URL, pipelinesURL))
+	res, err := ts.Client().Do(req)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	assertJSONResponse(t, res, map[string]interface{}{
-		"environments": []interface{}{
+		"applications": []interface{}{
 			map[string]interface{}{
-				"apps": []interface{}{
-					map[string]interface{}{
-						"name": "taxi",
-						"services": []interface{}{
-							map[string]interface{}{
-								"name":       "taxi-svc",
-								"source_url": "https://github.com/bigkevmcd/taxi.git",
-								"webhook": map[string]interface{}{
-									"secret": map[string]interface{}{
-										"name":      "github-webhook-secret-taxi-svc",
-										"namespace": "tst-cicd",
-									},
-								},
-							},
-						},
-					},
-				},
-				"name": "tst-dev",
-				"pipelines": map[string]interface{}{
-					"integration": map[string]interface{}{
-						"binding":  "github-pr-binding",
-						"template": "app-ci-template"},
-				},
-			},
-			map[string]interface{}{
-				"name": "tst-stage",
-			},
-			map[string]interface{}{
-				"cicd": true,
-				"name": "tst-cicd",
-			},
-			map[string]interface{}{
-				"argo": true,
-				"name": "tst-argocd",
+				"name":     "taxi",
+				"repo_url": "https://example.com/demo/gitops.git",
 			},
 		},
 	})
 }
 
 func TestGetPipelinesWithNoURL(t *testing.T) {
-	t.Skip()
+	c := newClient()
+	ts := httptest.NewTLSServer(AuthenticationMiddleware(NewRouter(c)))
+	t.Cleanup(ts.Close)
+
+	req := makeClientRequest(t, "Bearer testing", fmt.Sprintf("%s/pipelines", ts.URL))
+	res, err := ts.Client().Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertHTTPError(t, res, http.StatusBadRequest, "missing parameter 'url'")
 }
 
 func TestGetPipelinesWithBadURL(t *testing.T) {
+	c := newClient()
+	c.addContents("example/gitops", "pipelines.yaml", "master", "testdata/pipelines.yaml")
+	ts := httptest.NewTLSServer(AuthenticationMiddleware(NewRouter(c)))
+	t.Cleanup(ts.Close)
+
+	req := makeClientRequest(t, "Bearer testing", fmt.Sprintf("%s/pipelines?url=%%%%test.html", ts.URL))
+	res, err := ts.Client().Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertHTTPError(t, res, http.StatusBadRequest, "missing parameter 'url'")
+}
+
+func TestGetPipelinesWithPrivateRepoAndNoCredentials(t *testing.T) {
 	t.Skip()
+}
+
+func TestGetPipelinesWithNoAuthorizationHeader(t *testing.T) {
+	c := newClient()
+	ts := httptest.NewTLSServer(AuthenticationMiddleware(NewRouter(c)))
+	t.Cleanup(ts.Close)
+
+	req := makeClientRequest(t, "", fmt.Sprintf("%s/pipelines", ts.URL))
+	res, err := ts.Client().Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertHTTPError(t, res, http.StatusForbidden, "Authentication required")
 }
 
 // TODO: assert the content-type.
 func assertJSONResponse(t *testing.T, res *http.Response, want map[string]interface{}) {
+	t.Helper()
 	if res.StatusCode != http.StatusOK {
 		defer res.Body.Close()
 		errMsg, err := ioutil.ReadAll(res.Body)
@@ -124,6 +131,23 @@ func TestParseURL(t *testing.T) {
 	}
 }
 
+func TestPipelinesToAppsResponse(t *testing.T) {
+	raw := parseYAMLToConfig(t, "testdata/pipelines.yaml")
+
+	apps := pipelinesToAppsResponse(raw)
+
+	want := &appsResponse{
+		Apps: []appResponse{
+			{
+				Name: "taxi", RepoURL: "https://example.com/demo/gitops.git",
+			},
+		},
+	}
+	if diff := cmp.Diff(want, apps); diff != "" {
+		t.Fatalf("failed to parse:\n%s", diff)
+	}
+}
+
 func newClient() *stubClient {
 	return &stubClient{files: make(map[string]string)}
 }
@@ -144,6 +168,29 @@ func (s *stubClient) addContents(repo, path, ref, filename string) {
 	s.files[key(repo, path, ref)] = filename
 }
 
+func parseYAMLToConfig(t *testing.T, path string) *config {
+	t.Helper()
+	b, err := ioutil.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	response := &config{}
+	err = yaml.Unmarshal(b, &response)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return response
+}
+
 func key(s ...string) string {
 	return strings.Join(s, "#")
+}
+
+func makeClientRequest(t *testing.T, token, path string) *http.Request {
+	r, err := http.NewRequest("GET", path, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r.Header.Set(authHeader, token)
+	return r
 }

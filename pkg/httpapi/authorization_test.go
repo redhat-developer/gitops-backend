@@ -1,7 +1,6 @@
 package http
 
 import (
-	"context"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -12,31 +11,30 @@ import (
 
 func TestRequestWithNoAuthorizationHeader(t *testing.T) {
 	handler := AuthenticationMiddleware(makeTestFunc(""))
-	req := makeRequest("")
+	req := makeTokenRequest("")
 	w := httptest.NewRecorder()
 
 	handler.ServeHTTP(w, req)
 
 	resp := w.Result()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if string(body) != "Authentication required\n" {
-		t.Fatalf("got %s, want %s", body, "Authentication required\n")
-	}
-	if resp.StatusCode != http.StatusForbidden {
-		t.Fatalf("got %v, want %v", resp.StatusCode, http.StatusForbidden)
-	}
+	assertHTTPError(t, resp, http.StatusForbidden, "Authentication required")
 }
 
 func TestRequestWithBadHeader(t *testing.T) {
-	t.Skip()
+	handler := AuthenticationMiddleware(makeTestFunc(""))
+	req := makeTokenRequest("Bearer ")
+	w := httptest.NewRecorder()
+
+	handler.ServeHTTP(w, req)
+
+	resp := w.Result()
+
+	assertHTTPError(t, resp, http.StatusForbidden, "Authentication required")
 }
 
 func TestRequestWithAuthorizationHeader(t *testing.T) {
 	handler := AuthenticationMiddleware(makeTestFunc("testing-token"))
-	req := makeRequest("Bearer testing-token")
+	req := makeTokenRequest("Bearer testing-token")
 
 	w := httptest.NewRecorder()
 
@@ -50,22 +48,27 @@ func TestRequestWithAuthorizationHeader(t *testing.T) {
 
 func TestRequestWithAuthorizationHeaderSetsTokenInContext(t *testing.T) {
 	handler := AuthenticationMiddleware(makeTestFunc("testing-token"))
-	req := makeRequest("Bearer testing-token")
+	req := makeTokenRequest("Bearer testing-token")
 
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
 
 	resp := w.Result()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("incorrect status code, got %d, want %d", resp.StatusCode, http.StatusOK)
+	}
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if string(body) != "testing-token\n" {
-		t.Fatalf("got %s, want %s", body, "testing-token\n")
+	if s := strings.TrimSpace(string(body)); s != "testing-token" {
+		t.Fatalf("got %s, want %s", s, "testing-token\n")
 	}
+
 }
 
-func makeRequest(token string) *http.Request {
+func makeTokenRequest(token string) *http.Request {
 	req := httptest.NewRequest("GET", "http://example.com/", nil)
 	if token != "" {
 		req.Header.Set(authHeader, token)
@@ -81,4 +84,18 @@ func makeTestFunc(wantedToken string) http.HandlerFunc {
 		}
 		fmt.Fprintln(w, token)
 	})
+}
+
+func assertHTTPError(t *testing.T, resp *http.Response, code int, want string) {
+	t.Helper()
+	if resp.StatusCode != code {
+		t.Errorf("status code didn't match, got %d, want %d", resp.StatusCode, code)
+	}
+	b, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if s := strings.TrimSpace(string(b)); s != want {
+		t.Fatalf("got %s, want %s", s, want)
+	}
 }

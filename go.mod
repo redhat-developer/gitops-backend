@@ -33,4 +33,5 @@ require (
 	gopkg.in/ini.v1 v1.52.0 // indirect
 	gopkg.in/yaml.v2 v2.3.0 // indirect
 	k8s.io/apimachinery v0.17.6 // indirect
+	sigs.k8s.io/yaml v1.1.0
 )

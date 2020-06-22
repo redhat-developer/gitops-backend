@@ -1,20 +1,37 @@
+config:
+  argocd:
+    namespace: argocd
+  pipelines:
+    name: tst-cicd
 environments:
-- name: tst-dev
-  apps:
-  - name: taxi
-    services:
-    - name: taxi-svc
-      source_url: https://github.com/bigkevmcd/taxi.git
-      webhook:
-        secret:
-          name: github-webhook-secret-taxi-svc
-          namespace: tst-cicd
+- cluster: https://kubernetes.testing.svc
+  name: new-env
   pipelines:
     integration:
-      binding: github-pr-binding
+      bindings:
+      - github-pr-binding
       template: app-ci-template
+- apps:
+  - name: taxi
+    services:
+    - taxi-svc
+  name: tst-dev
+  pipelines:
+    integration:
+      bindings:
+      - github-pr-binding
+      template: app-ci-template
+  services:
+  - name: taxi-svc
+    pipelines:
+      integration:
+        bindings:
+        - tst-dev-taxi-svc-binding
+        - github-pr-binding
+    source_url: https://example.com/demo/taxi.git
+    webhook:
+      secret:
+        name: webhook-secret-tst-dev-taxi-svc
+        namespace: tst-cicd
 - name: tst-stage
-- cicd: true
-  name: tst-cicd
-- argo: true
-  name: tst-argocd
+gitops_url: https://example.com/demo/gitops.git
