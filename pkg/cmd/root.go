@@ -7,6 +7,9 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	"github.com/bigkevmcd/gitops-backend/pkg/metrics"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 const (
@@ -32,8 +35,10 @@ func makeHTTPCmd() *cobra.Command {
 		Use:   "gitops-backend",
 		Short: "provide a simple API for fetching information",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			_ = metrics.New("backend", nil)
 			listen := fmt.Sprintf(":%d", viper.GetInt(portFlag))
 			log.Printf("listening on %s", listen)
+			http.Handle("/metrics", promhttp.Handler())
 			return http.ListenAndServe(listen, nil)
 		},
 	}

@@ -7,8 +7,6 @@ import (
 // PrometheusMetrics is a wrapper around Prometheus metrics for counting
 // events in the system.
 type PrometheusMetrics struct {
-	hooks          *prometheus.CounterVec
-	invalidHooks   prometheus.Counter
 	apiCalls       *prometheus.CounterVec
 	failedAPICalls *prometheus.CounterVec
 }

@@ -11,11 +11,12 @@ import (
 	"github.com/jenkins-x/go-scm/scm/factory"
 
 	"github.com/bigkevmcd/gitops-backend/pkg/metrics"
+	"github.com/bigkevmcd/gitops-backend/test"
 )
 
 func TestFileContents(t *testing.T) {
 	m := metrics.NewMock()
-	as := makeAPIServer(t, "/api/v3/repos/Codertocat/Hello-World/contents/.tekton_ci.yaml", "master", "testdata/content.json")
+	as := makeAPIServer(t, "/api/v3/repos/Codertocat/Hello-World/contents/pipelines.yaml", "master", "testdata/content.json")
 	defer as.Close()
 	scmClient, err := factory.NewClient("github", as.URL, "", factory.Client(as.Client()))
 	if err != nil {
@@ -23,7 +24,7 @@ func TestFileContents(t *testing.T) {
 	}
 	client := New(scmClient, m)
 
-	body, err := client.FileContents(context.TODO(), "Codertocat/Hello-World", ".tekton_ci.yaml", "master")
+	body, err := client.FileContents(context.TODO(), "Codertocat/Hello-World", "pipelines.yaml", "master")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -37,17 +38,38 @@ func TestFileContents(t *testing.T) {
 }
 
 func TestFileContentsWithNotFoundResponse(t *testing.T) {
-	as := makeAPIServer(t, "/api/v3/repos/Codertocat/Hello-World/contents/.tekton_ci.yaml", "master", "")
+	m := metrics.NewMock()
+	as := makeAPIServer(t, "/api/v3/repos/Codertocat/Hello-World/contents/pipelines.yaml", "master", "")
 	defer as.Close()
 	scmClient, err := factory.NewClient("github", as.URL, "", factory.Client(as.Client()))
 	if err != nil {
 		t.Fatal(err)
 	}
-	client := New(scmClient, metrics.NewMock())
+	client := New(scmClient, m)
 
-	_, err = client.FileContents(context.TODO(), "Codertocat/Hello-World", ".tekton_ci.yaml", "master")
+	_, err = client.FileContents(context.TODO(), "Codertocat/Hello-World", "pipelines.yaml", "master")
 	if !IsNotFound(err) {
+		t.Fatalf("failed with %#v", err)
+	}
+	if m.FailedAPICalls != 1 {
+		t.Fatalf("metrics count of failed API calls, got %d, want 1", m.FailedAPICalls)
+	}
+}
+
+func TestFileContentsUnableToConnect(t *testing.T) {
+	m := metrics.NewMock()
+	scmClient, err := factory.NewClient("github", "https://localhost:2000", "")
+	if err != nil {
 		t.Fatal(err)
+	}
+	client := New(scmClient, m)
+
+	_, err = client.FileContents(context.TODO(), "Codertocat/Hello-World", "pipelines.yaml", "master")
+	if !test.MatchError(t, "connection refused", err) {
+		t.Fatal(err)
+	}
+	if m.FailedAPICalls != 1 {
+		t.Fatalf("metrics count of failed API calls, got %d, want 1", m.FailedAPICalls)
 	}
 }
 

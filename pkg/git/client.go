@@ -24,14 +24,17 @@ type SCMClient struct {
 // If an HTTP error is returned by the upstream service, an error with the
 // response status code is returned.
 func (c *SCMClient) FileContents(ctx context.Context, repo, path, ref string) ([]byte, error) {
-	content, r, err := c.client.Contents.Find(ctx, repo, path, ref)
 	c.m.CountAPICall("file_contents")
-	if isErrorStatus(r.Status) {
-		return nil, scmError{msg: fmt.Sprintf("failed to get file %s from repo %s ref %s", path, repo, ref), Status: r.Status}
+	content, r, err := c.client.Contents.Find(ctx, repo, path, ref)
+	if r != nil && isErrorStatus(r.Status) {
+		c.m.CountFailedAPICall("file_contents")
+		return nil, SCMError{msg: fmt.Sprintf("failed to get file %s from repo %s ref %s", path, repo, ref), Status: r.Status}
 	}
 	if err != nil {
+		c.m.CountFailedAPICall("file_contents")
 		return nil, err
 	}
+
 	return content.Data, nil
 }
 

@@ -1,0 +1,20 @@
+environments:
+- name: tst-dev
+  apps:
+  - name: taxi
+    services:
+    - name: taxi-svc
+      source_url: https://github.com/bigkevmcd/taxi.git
+      webhook:
+        secret:
+          name: github-webhook-secret-taxi-svc
+          namespace: tst-cicd
+  pipelines:
+    integration:
+      binding: github-pr-binding
+      template: app-ci-template
+- name: tst-stage
+- cicd: true
+  name: tst-cicd
+- argo: true
+  name: tst-argocd
