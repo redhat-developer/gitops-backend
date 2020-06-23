@@ -10,10 +10,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/rhd-gitops-examples/gitops-backend/pkg/git"
-	"github.com/rhd-gitops-examples/gitops-backend/pkg/httpapi/secrets"
-	"github.com/rhd-gitops-examples/gitops-backend/test"
 	"github.com/google/go-cmp/cmp"
+	"github.com/rhd-gitops-examples/gitops-backend/pkg/git"
+	"github.com/rhd-gitops-examples/gitops-backend/test"
 	"sigs.k8s.io/yaml"
 )
 
@@ -75,9 +74,8 @@ func TestGetPipelinesWithNoAuthorizationHeader(t *testing.T) {
 }
 
 func makeServer(t *testing.T) (*httptest.Server, *stubClient) {
-	s := secrets.NewMock()
 	c := newClient()
-	ts := httptest.NewTLSServer(AuthenticationMiddleware(NewRouter(c, s)))
+	ts := httptest.NewTLSServer(AuthenticationMiddleware(NewRouter(c)))
 	t.Cleanup(ts.Close)
 	return ts, c
 }

@@ -7,9 +7,8 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/rhd-gitops-examples/gitops-backend/pkg/git"
-	"github.com/rhd-gitops-examples/gitops-backend/pkg/httpapi/secrets"
 	"github.com/julienschmidt/httprouter"
+	"github.com/rhd-gitops-examples/gitops-backend/pkg/git"
 	"sigs.k8s.io/yaml"
 )
 
@@ -17,7 +16,6 @@ import (
 type APIRouter struct {
 	*httprouter.Router
 	scmClient git.SCM
-	secrets   secrets.SecretGetter
 }
 
 // GePipelines fetches and returns the pipeline body.
@@ -48,8 +46,8 @@ func (a *APIRouter) GetPipelines(w http.ResponseWriter, r *http.Request) {
 }
 
 // NewRouter creates and returns a new APIRouter.
-func NewRouter(c git.SCM, s secrets.SecretGetter) *APIRouter {
-	api := &APIRouter{Router: httprouter.New(), scmClient: c, secrets: s}
+func NewRouter(c git.SCM) *APIRouter {
+	api := &APIRouter{Router: httprouter.New(), scmClient: c}
 	api.HandlerFunc(http.MethodGet, "/pipelines", api.GetPipelines)
 	return api
 }
