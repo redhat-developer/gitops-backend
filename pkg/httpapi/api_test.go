@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -13,11 +14,19 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/rhd-gitops-examples/gitops-backend/pkg/git"
 	"github.com/rhd-gitops-examples/gitops-backend/test"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/yaml"
 )
 
+var testName = types.NamespacedName{
+	Namespace: "test-ns",
+	Name:      "test-secret",
+}
+
 func TestGetPipelines(t *testing.T) {
-	ts, c := makeServer(t)
+	ts, c := makeServer(t, func(a *APIRouter) {
+		a.secretRef = testName
+	})
 	c.addContents("example/gitops", "pipelines.yaml", "master", "testdata/pipelines.yaml")
 	pipelinesURL := "https://github.com/example/gitops.git"
 
@@ -58,9 +67,9 @@ func TestGetPipelinesWithBadURL(t *testing.T) {
 	assertHTTPError(t, res, http.StatusBadRequest, "missing parameter 'url'")
 }
 
-func TestGetPipelinesWithPrivateRepoAndNoCredentials(t *testing.T) {
-	t.Skip()
-}
+// func TestGetPipelinesWithPrivateRepoAndNoCredentials(t *testing.T) {
+// 	t.Skip()
+// }
 
 func TestGetPipelinesWithNoAuthorizationHeader(t *testing.T) {
 	ts, _ := makeServer(t)
@@ -71,39 +80,6 @@ func TestGetPipelinesWithNoAuthorizationHeader(t *testing.T) {
 		t.Fatal(err)
 	}
 	assertHTTPError(t, res, http.StatusForbidden, "Authentication required")
-}
-
-func makeServer(t *testing.T) (*httptest.Server, *stubClient) {
-	c := newClient()
-	ts := httptest.NewTLSServer(AuthenticationMiddleware(NewRouter(c)))
-	t.Cleanup(ts.Close)
-	return ts, c
-}
-
-// TODO: assert the content-type.
-func assertJSONResponse(t *testing.T, res *http.Response, want map[string]interface{}) {
-	t.Helper()
-	if res.StatusCode != http.StatusOK {
-		defer res.Body.Close()
-		errMsg, err := ioutil.ReadAll(res.Body)
-		if err != nil {
-			t.Fatal(err)
-		}
-		t.Fatalf("didn't get a successful response: %v (%s)", res.StatusCode, errMsg)
-	}
-	defer res.Body.Close()
-	b, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		t.Fatal(err)
-	}
-	got := map[string]interface{}{}
-	err = json.Unmarshal(b, &got)
-	if err != nil {
-		t.Fatalf("failed to parse %s: %s", b, err)
-	}
-	if diff := cmp.Diff(want, got); diff != "" {
-		t.Fatalf("JSON response failed:\n%s", diff)
-	}
 }
 
 func TestParseURL(t *testing.T) {
@@ -190,4 +166,69 @@ func makeClientRequest(t *testing.T, token, path string) *http.Request {
 	}
 	r.Header.Set(authHeader, token)
 	return r
+}
+
+type routerOptionFunc func(*APIRouter)
+
+func makeServer(t *testing.T, opts ...routerOptionFunc) (*httptest.Server, *stubClient) {
+	sg := &stubSecretGetter{
+		testToken: "test-token",
+		testName:  testName,
+	}
+	sf := &stubClientFactory{client: newClient()}
+	router := NewRouter(sf, sg)
+	for _, o := range opts {
+		o(router)
+	}
+
+	ts := httptest.NewTLSServer(AuthenticationMiddleware(router))
+	t.Cleanup(ts.Close)
+	return ts, sf.client
+}
+
+// TODO: assert the content-type.
+func assertJSONResponse(t *testing.T, res *http.Response, want map[string]interface{}) {
+	t.Helper()
+	if res.StatusCode != http.StatusOK {
+		defer res.Body.Close()
+		errMsg, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Fatalf("didn't get a successful response: %v (%s)", res.StatusCode, strings.TrimSpace(string(errMsg)))
+	}
+	defer res.Body.Close()
+	b, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := map[string]interface{}{}
+	err = json.Unmarshal(b, &got)
+	if err != nil {
+		t.Fatalf("failed to parse %s: %s", b, err)
+	}
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Fatalf("JSON response failed:\n%s", diff)
+	}
+}
+
+type stubSecretGetter struct {
+	testToken string
+	testName  types.NamespacedName
+}
+
+func (f *stubSecretGetter) SecretToken(ctx context.Context, key types.NamespacedName) (string, error) {
+	if key == f.testName {
+		return f.testToken, nil
+	}
+	return "", errors.New("failed to get a secret token")
+}
+
+type stubClientFactory struct {
+	client *stubClient
+}
+
+func (s stubClientFactory) Create(url, token string) (git.SCM, error) {
+	// TODO: this should match on the URL/token combo.
+	return s.client, nil
 }

@@ -1,6 +1,7 @@
 package http
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -9,13 +10,18 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/rhd-gitops-examples/gitops-backend/pkg/git"
+	"github.com/rhd-gitops-examples/gitops-backend/pkg/httpapi/secrets"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/yaml"
 )
 
 // APIRouter is an HTTP API for accessing app configurations.
 type APIRouter struct {
 	*httprouter.Router
-	scmClient git.SCM
+	clientFactory ClientFactory
+	secretGetter  secrets.SecretGetter
+	// TODO: replace this with a way to get it from the request.
+	secretRef types.NamespacedName
 }
 
 // GePipelines fetches and returns the pipeline body.
@@ -31,7 +37,13 @@ func (a *APIRouter) GetPipelines(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	body, err := a.scmClient.FileContents(r.Context(), repo, "pipelines.yaml", "master")
+	client, err := a.getAuthenticatedClient(r.Context(), urlToFetch)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	body, err := client.FileContents(r.Context(), repo, "pipelines.yaml", "master")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -45,9 +57,17 @@ func (a *APIRouter) GetPipelines(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(pipelinesToAppsResponse(pipelines))
 }
 
+func (a *APIRouter) getAuthenticatedClient(ctx context.Context, u string) (git.SCM, error) {
+	token, err := a.secretGetter.SecretToken(ctx, a.secretRef)
+	if err != nil {
+		return nil, err
+	}
+	return a.clientFactory.Create(u, token)
+}
+
 // NewRouter creates and returns a new APIRouter.
-func NewRouter(c git.SCM) *APIRouter {
-	api := &APIRouter{Router: httprouter.New(), scmClient: c}
+func NewRouter(c ClientFactory, s secrets.SecretGetter) *APIRouter {
+	api := &APIRouter{Router: httprouter.New(), clientFactory: c, secretGetter: s}
 	api.HandlerFunc(http.MethodGet, "/pipelines", api.GetPipelines)
 	return api
 }
