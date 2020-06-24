@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pipelines-app-delivery-backend
+  labels:
+    app.kubernetes.io/name: pipelines-app-delivery-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: pipelines-app-delivery-backend
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: pipelines-app-delivery-backend
+    spec:
+      serviceAccountName: pipelines-app-delivery
+      containers:
+        - name: pipelines-app-delivery-http
+          image: quay.io/kmcdermo/gitops-backend:latest
+          imagePullPolicy: Always

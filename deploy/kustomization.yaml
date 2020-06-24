@@ -1,0 +1,7 @@
+namespace: pipelines-app-delivery
+resources:
+  - serviceaccount.yaml
+  - rolebinding.yaml
+  - role.yaml
+  - deployment.yaml
+  - service.yaml

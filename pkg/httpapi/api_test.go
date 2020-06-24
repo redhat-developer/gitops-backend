@@ -1,4 +1,4 @@
-package http
+package httpapi
 
 import (
 	"context"
@@ -25,7 +25,7 @@ var testName = types.NamespacedName{
 
 func TestGetPipelines(t *testing.T) {
 	ts, c := makeServer(t, func(a *APIRouter) {
-		a.secretRef = testName
+		a.SecretRef = testName
 	})
 	c.addContents("example/gitops", "pipelines.yaml", "master", "testdata/pipelines.yaml")
 	pipelinesURL := "https://github.com/example/gitops.git"

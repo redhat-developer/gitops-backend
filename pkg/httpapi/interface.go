@@ -1,4 +1,4 @@
-package http
+package httpapi
 
 import "github.com/rhd-gitops-examples/gitops-backend/pkg/git"
 

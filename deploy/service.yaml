@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: pipelines-app-delivery-backend
+  labels:
+    app.kubernetes.io/name: pipelines-app-delivery-backend
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: pipelines-app-delivery-backend
+  ports:
+    - protocol: TCP
+      port: 8080
