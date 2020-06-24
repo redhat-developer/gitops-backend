@@ -39,8 +39,9 @@ func TestGetPipelines(t *testing.T) {
 	assertJSONResponse(t, res, map[string]interface{}{
 		"applications": []interface{}{
 			map[string]interface{}{
-				"name":     "taxi",
-				"repo_url": "https://example.com/demo/gitops.git",
+				"name":         "taxi",
+				"repo_url":     "https://example.com/demo/gitops.git",
+				"environments": []interface{}{"tst-dev", "tst-stage"},
 			},
 		},
 	})
@@ -101,23 +102,6 @@ func TestParseURL(t *testing.T) {
 		if repo != tt.wantRepo {
 			t.Errorf("repo got %s, want %s", repo, tt.wantRepo)
 		}
-	}
-}
-
-func TestPipelinesToAppsResponse(t *testing.T) {
-	raw := parseYAMLToConfig(t, "testdata/pipelines.yaml")
-
-	apps := pipelinesToAppsResponse(raw)
-
-	want := &appsResponse{
-		Apps: []appResponse{
-			{
-				Name: "taxi", RepoURL: "https://example.com/demo/gitops.git",
-			},
-		},
-	}
-	if diff := cmp.Diff(want, apps); diff != "" {
-		t.Fatalf("failed to parse:\n%s", diff)
 	}
 }
 
