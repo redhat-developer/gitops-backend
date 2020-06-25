@@ -43,17 +43,12 @@ func makeHTTPCmd() *cobra.Command {
 			m := metrics.New("backend", nil)
 			listen := fmt.Sprintf(":%d", viper.GetInt(portFlag))
 			log.Printf("listening on %s", listen)
+
 			http.Handle("/metrics", promhttp.Handler())
-			client, err := makeClient()
+
+			router, err := makeAPIRouter(m)
 			if err != nil {
 				return err
-			}
-
-			cf := httpapi.NewClientFactory(httpapi.NewDriverIdentifier(), m)
-			router := httpapi.NewRouter(cf, secrets.New(client))
-			router.SecretRef = types.NamespacedName{
-				Name:      "gitops-backend-secret",
-				Namespace: "pipelines-app-delivery",
 			}
 			http.Handle("/", router)
 			return http.ListenAndServe(listen, nil)
@@ -86,4 +81,19 @@ func makeClient() (kubernetes.Interface, error) {
 		return nil, fmt.Errorf("failed to create the core client: %v", err)
 	}
 	return c, err
+}
+
+func makeAPIRouter(m metrics.Interface) (*httpapi.APIRouter, error) {
+	client, err := makeClient()
+	if err != nil {
+		return nil, err
+	}
+	cf := httpapi.NewClientFactory(httpapi.NewDriverIdentifier(), m)
+	router := httpapi.NewRouter(cf, secrets.New(client))
+	// TODO: move this to the constructor function.
+	router.SecretRef = types.NamespacedName{
+		Name:      "gitops-backend-secret",
+		Namespace: "pipelines-app-delivery",
+	}
+	return router, nil
 }
