@@ -32,6 +32,18 @@ func TestRequestWithBadHeader(t *testing.T) {
 	assertHTTPError(t, resp, http.StatusForbidden, "Authentication required")
 }
 
+func TestRequestWithBadPrefix(t *testing.T) {
+	handler := AuthenticationMiddleware(makeTestFunc(""))
+	req := makeTokenRequest("Authentication token")
+	w := httptest.NewRecorder()
+
+	handler.ServeHTTP(w, req)
+
+	resp := w.Result()
+
+	assertHTTPError(t, resp, http.StatusForbidden, "Authentication required")
+}
+
 func TestRequestWithAuthorizationHeader(t *testing.T) {
 	handler := AuthenticationMiddleware(makeTestFunc("testing-token"))
 	req := makeTokenRequest("Bearer testing-token")

@@ -45,5 +45,8 @@ func extractToken(s string) string {
 	if len(parts) != 2 {
 		return ""
 	}
+	if strings.TrimSpace(parts[0]) != "Bearer" {
+		return ""
+	}
 	return strings.TrimSpace(parts[1])
 }
