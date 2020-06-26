@@ -8,7 +8,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -50,7 +49,7 @@ func makeHTTPCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			http.Handle("/", router)
+			http.Handle("/", httpapi.AuthenticationMiddleware(router))
 			return http.ListenAndServe(listen, nil)
 		},
 	}
@@ -71,25 +70,21 @@ func Execute() {
 	}
 }
 
-func makeClient() (kubernetes.Interface, error) {
+func makeClusterConfig() (*rest.Config, error) {
 	clusterConfig, err := rest.InClusterConfig()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create a cluster config: %s", err)
 	}
-	c, err := kubernetes.NewForConfig(clusterConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create the core client: %v", err)
-	}
-	return c, err
+	return clusterConfig, nil
 }
 
 func makeAPIRouter(m metrics.Interface) (*httpapi.APIRouter, error) {
-	client, err := makeClient()
+	config, err := makeClusterConfig()
 	if err != nil {
 		return nil, err
 	}
 	cf := httpapi.NewClientFactory(httpapi.NewDriverIdentifier(), m)
-	router := httpapi.NewRouter(cf, secrets.New(client))
+	router := httpapi.NewRouter(cf, secrets.NewFromConfig(config, false))
 	// TODO: move this to the constructor function.
 	router.SecretRef = types.NamespacedName{
 		Name:      "gitops-backend-secret",

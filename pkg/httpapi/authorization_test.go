@@ -71,9 +71,7 @@ func TestRequestWithAuthorizationHeaderSetsTokenInContext(t *testing.T) {
 		t.Fatalf("incorrect status code, got %d, want %d", resp.StatusCode, http.StatusOK)
 	}
 	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		t.Fatal(err)
-	}
+	assertNoError(t, err)
 	if s := strings.TrimSpace(string(body)); s != "testing-token" {
 		t.Fatalf("got %s, want %s", s, "testing-token\n")
 	}
@@ -104,10 +102,15 @@ func assertHTTPError(t *testing.T, resp *http.Response, code int, want string) {
 		t.Errorf("status code didn't match, got %d, want %d", resp.StatusCode, code)
 	}
 	b, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		t.Fatal(err)
-	}
+	assertNoError(t, err)
 	if s := strings.TrimSpace(string(b)); s != want {
 		t.Fatalf("got %s, want %s", s, want)
+	}
+}
+
+func assertNoError(t *testing.T, err error) {
+	t.Helper()
+	if err != nil {
+		t.Fatal(err)
 	}
 }

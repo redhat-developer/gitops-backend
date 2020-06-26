@@ -20,8 +20,8 @@ import (
 // APIRouter is an HTTP API for accessing app configurations.
 type APIRouter struct {
 	*httprouter.Router
-	clientFactory ClientFactory
-	secretGetter  secrets.SecretGetter
+	gitClientFactory GitClientFactory
+	secretGetter     secrets.SecretGetter
 	// TODO: replace this with a way to get it from the request.
 	SecretRef types.NamespacedName
 }
@@ -37,7 +37,6 @@ func (a *APIRouter) GetPipelines(w http.ResponseWriter, r *http.Request) {
 
 	// TODO: replace this with logr or sugar.
 	log.Printf("urlToFetch = %#v\n", urlToFetch)
-
 	repo, err := parseURL(urlToFetch)
 	if err != nil {
 		log.Printf("ERROR: failed to parse the URL: %s", err)
@@ -47,7 +46,7 @@ func (a *APIRouter) GetPipelines(w http.ResponseWriter, r *http.Request) {
 
 	// TODO: don't send back the error directly, it could contain technical
 	// details.
-	client, err := a.getAuthenticatedClient(r.Context(), urlToFetch)
+	client, err := a.getAuthenticatedGitClient(r.Context(), urlToFetch)
 	if err != nil {
 		log.Println("ERROR: failed to get an authenticated client")
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -75,17 +74,18 @@ func (a *APIRouter) GetPipelines(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(pipelinesToAppsResponse(pipelines))
 }
 
-func (a *APIRouter) getAuthenticatedClient(ctx context.Context, u string) (git.SCM, error) {
-	token, err := a.secretGetter.SecretToken(ctx, a.SecretRef)
+func (a *APIRouter) getAuthenticatedGitClient(ctx context.Context, url string) (git.SCM, error) {
+	token, _ := AuthToken(ctx)
+	token, err := a.secretGetter.SecretToken(ctx, token, a.SecretRef)
 	if err != nil {
 		return nil, err
 	}
-	return a.clientFactory.Create(u, token)
+	return a.gitClientFactory.Create(url, token)
 }
 
 // NewRouter creates and returns a new APIRouter.
-func NewRouter(c ClientFactory, s secrets.SecretGetter) *APIRouter {
-	api := &APIRouter{Router: httprouter.New(), clientFactory: c, secretGetter: s}
+func NewRouter(c GitClientFactory, s secrets.SecretGetter) *APIRouter {
+	api := &APIRouter{Router: httprouter.New(), gitClientFactory: c, secretGetter: s}
 	api.HandlerFunc(http.MethodGet, "/pipelines", api.GetPipelines)
 	return api
 }

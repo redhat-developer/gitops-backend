@@ -8,7 +8,7 @@ import (
 	"github.com/rhd-gitops-examples/gitops-backend/pkg/metrics"
 )
 
-// SCMClientFactory is an implementation of the ClientFactory interface that can
+// SCMClientFactory is an implementation of the GitClientFactory interface that can
 // create clients based on go-scm.
 type SCMClientFactory struct {
 	drivers DriverIdentifier

@@ -2,22 +2,31 @@ package secrets
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
+	"k8s.io/client-go/rest"
 )
 
 var _ SecretGetter = (*KubeSecretGetter)(nil)
 
-func TestSecret(t *testing.T) {
-	id := types.NamespacedName{Name: "test-secret", Namespace: "test-ns"}
-	fakeClient := fake.NewSimpleClientset(createSecret(id, "secret-token"))
-	g := New(fakeClient)
+var testID = types.NamespacedName{Name: "test-secret", Namespace: "test-ns"}
 
-	secret, err := g.SecretToken(context.TODO(), id)
+func TestSecret(t *testing.T) {
+	g := New(&stubConfigFactory{})
+	g.clientFactory = func(c *rest.Config) (kubernetes.Interface, error) {
+		if c.BearerToken == "auth token" {
+			return fake.NewSimpleClientset(createSecret(testID, "secret-token")), nil
+		}
+		return nil, errors.New("failed")
+	}
+
+	secret, err := g.SecretToken(context.TODO(), "auth token", testID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -28,11 +37,15 @@ func TestSecret(t *testing.T) {
 }
 
 func TestSecretWithMissingSecret(t *testing.T) {
-	fakeClient := fake.NewSimpleClientset()
-	g := New(fakeClient)
+	g := New(&stubConfigFactory{})
+	g.clientFactory = func(c *rest.Config) (kubernetes.Interface, error) {
+		if c.BearerToken == "auth token" {
+			return fake.NewSimpleClientset(), nil
+		}
+		return nil, errors.New("failed")
+	}
 
-	id := types.NamespacedName{Name: "test-secret", Namespace: "test-ns"}
-	_, err := g.SecretToken(context.TODO(), id)
+	_, err := g.SecretToken(context.TODO(), "auth token", testID)
 	if err.Error() != `error getting secret test-ns/test-secret: secrets "test-secret" not found` {
 		t.Fatal(err)
 	}
@@ -53,4 +66,11 @@ func createSecret(id types.NamespacedName, token string) *corev1.Secret {
 			"token": []byte(token),
 		},
 	}
+}
+
+type stubConfigFactory struct {
+}
+
+func (s *stubConfigFactory) Create(token string) (*rest.Config, error) {
+	return &rest.Config{BearerToken: token}, nil
 }

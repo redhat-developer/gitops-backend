@@ -20,8 +20,8 @@ type MockSecret struct {
 }
 
 // Secret implements the SecretGetter interface.
-func (k MockSecret) SecretToken(ctx context.Context, secretID types.NamespacedName) (string, error) {
-	token, ok := k.secrets[key(secretID)]
+func (k MockSecret) SecretToken(ctx context.Context, authToken string, secretID types.NamespacedName) (string, error) {
+	token, ok := k.secrets[key(authToken, secretID)]
 	if !ok {
 		return "", fmt.Errorf("mock not found")
 	}
@@ -29,10 +29,10 @@ func (k MockSecret) SecretToken(ctx context.Context, secretID types.NamespacedNa
 }
 
 // AddStubResponse is a mock method that sets up a token to be returned.
-func (k MockSecret) AddStubResponse(secretID types.NamespacedName, token string) {
-	k.secrets[key(secretID)] = token
+func (k MockSecret) AddStubResponse(authToken string, secretID types.NamespacedName, token string) {
+	k.secrets[key(authToken, secretID)] = token
 }
 
-func key(n types.NamespacedName) string {
-	return fmt.Sprintf("%s:%s", n.Name, n.Namespace)
+func key(token string, n types.NamespacedName) string {
+	return fmt.Sprintf("%s:%s:%s", token, n.Name, n.Namespace)
 }

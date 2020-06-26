@@ -1,10 +1,12 @@
 package httpapi
 
-import "github.com/rhd-gitops-examples/gitops-backend/pkg/git"
+import (
+	"github.com/rhd-gitops-examples/gitops-backend/pkg/git"
+)
 
-// ClientFactory is an interface for creating git.SCM clients based on the URL
+// GitClientFactory is an interface for creating git.SCM clients based on the URL
 // to be fetched.
-type ClientFactory interface {
+type GitClientFactory interface {
 	// Create creates a new client, using the provided token for authentication.
 	Create(url, token string) (git.SCM, error)
 }

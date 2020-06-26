@@ -9,7 +9,7 @@ import (
 	"github.com/rhd-gitops-examples/gitops-backend/test"
 )
 
-var _ ClientFactory = (*SCMClientFactory)(nil)
+var _ GitClientFactory = (*SCMClientFactory)(nil)
 
 func TestSCMFactory(t *testing.T) {
 	// TODO non-standard GitHub and GitLab hosts!

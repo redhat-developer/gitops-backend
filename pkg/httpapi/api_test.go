@@ -156,8 +156,9 @@ type routerOptionFunc func(*APIRouter)
 
 func makeServer(t *testing.T, opts ...routerOptionFunc) (*httptest.Server, *stubClient) {
 	sg := &stubSecretGetter{
-		testToken: "test-token",
-		testName:  testName,
+		testToken:     "test-token",
+		testName:      testName,
+		testAuthToken: "testing",
 	}
 	sf := &stubClientFactory{client: newClient()}
 	router := NewRouter(sf, sg)
@@ -197,12 +198,13 @@ func assertJSONResponse(t *testing.T, res *http.Response, want map[string]interf
 }
 
 type stubSecretGetter struct {
-	testToken string
-	testName  types.NamespacedName
+	testAuthToken string
+	testToken     string
+	testName      types.NamespacedName
 }
 
-func (f *stubSecretGetter) SecretToken(ctx context.Context, key types.NamespacedName) (string, error) {
-	if key == f.testName {
+func (f *stubSecretGetter) SecretToken(ctx context.Context, authToken string, key types.NamespacedName) (string, error) {
+	if key == f.testName && authToken == f.testAuthToken {
 		return f.testToken, nil
 	}
 	return "", errors.New("failed to get a secret token")
