@@ -1,15 +1,14 @@
-package httpapi
+package git
 
 import (
 	"testing"
 
 	"github.com/jenkins-x/go-scm/scm"
-	"github.com/rhd-gitops-examples/gitops-backend/pkg/git"
 	"github.com/rhd-gitops-examples/gitops-backend/pkg/metrics"
 	"github.com/rhd-gitops-examples/gitops-backend/test"
 )
 
-var _ GitClientFactory = (*SCMClientFactory)(nil)
+var _ ClientFactory = (*SCMClientFactory)(nil)
 
 func TestSCMFactory(t *testing.T) {
 	// TODO non-standard GitHub and GitLab hosts!
@@ -33,7 +32,7 @@ func TestSCMFactory(t *testing.T) {
 			if tt.want == scm.DriverUnknown {
 				return
 			}
-			gc, ok := client.(*git.SCMClient)
+			gc, ok := client.(*SCMClient)
 			if !ok {
 				rt.Errorf("returned client is not an SCMClient: %T", gc)
 			}

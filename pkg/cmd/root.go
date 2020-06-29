@@ -7,10 +7,10 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/rhd-gitops-examples/gitops-backend/pkg/git"
 	"github.com/rhd-gitops-examples/gitops-backend/pkg/httpapi"
 	"github.com/rhd-gitops-examples/gitops-backend/pkg/httpapi/secrets"
 	"github.com/rhd-gitops-examples/gitops-backend/pkg/metrics"
@@ -83,7 +83,7 @@ func makeAPIRouter(m metrics.Interface) (*httpapi.APIRouter, error) {
 	if err != nil {
 		return nil, err
 	}
-	cf := httpapi.NewClientFactory(httpapi.NewDriverIdentifier(), m)
+	cf := git.NewClientFactory(git.NewDriverIdentifier(), m)
 	router := httpapi.NewRouter(cf, secrets.NewFromConfig(config, false))
 	return router, nil
 }

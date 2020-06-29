@@ -26,7 +26,7 @@ var DefaultSecretRef = types.NamespacedName{
 // APIRouter is an HTTP API for accessing app configurations.
 type APIRouter struct {
 	*httprouter.Router
-	gitClientFactory GitClientFactory
+	gitClientFactory git.ClientFactory
 	secretGetter     secrets.SecretGetter
 	secretRef        types.NamespacedName
 }
@@ -92,7 +92,7 @@ func (a *APIRouter) getAuthenticatedGitClient(ctx context.Context, req *http.Req
 }
 
 // NewRouter creates and returns a new APIRouter.
-func NewRouter(c GitClientFactory, s secrets.SecretGetter) *APIRouter {
+func NewRouter(c git.ClientFactory, s secrets.SecretGetter) *APIRouter {
 	api := &APIRouter{Router: httprouter.New(), gitClientFactory: c, secretGetter: s, secretRef: DefaultSecretRef}
 	api.HandlerFunc(http.MethodGet, "/pipelines", api.GetPipelines)
 	return api
