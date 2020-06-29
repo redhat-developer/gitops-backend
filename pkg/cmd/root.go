@@ -85,10 +85,5 @@ func makeAPIRouter(m metrics.Interface) (*httpapi.APIRouter, error) {
 	}
 	cf := httpapi.NewClientFactory(httpapi.NewDriverIdentifier(), m)
 	router := httpapi.NewRouter(cf, secrets.NewFromConfig(config, false))
-	// TODO: move this to the constructor function.
-	router.SecretRef = types.NamespacedName{
-		Name:      "gitops-backend-secret",
-		Namespace: "pipelines-app-delivery",
-	}
 	return router, nil
 }

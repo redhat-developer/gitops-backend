@@ -12,9 +12,8 @@ const (
 )
 
 // AuthToken gets the auth token from the context.
-func AuthToken(ctx context.Context) (string, bool) {
-	hook, ok := ctx.Value(authTokenCtxKey).(string)
-	return hook, ok
+func AuthToken(ctx context.Context) string {
+	return ctx.Value(authTokenCtxKey).(string)
 }
 
 // WithAuthToken sets the auth token into the context.

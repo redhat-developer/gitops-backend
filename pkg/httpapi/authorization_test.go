@@ -88,9 +88,9 @@ func makeTokenRequest(token string) *http.Request {
 
 func makeTestFunc(wantedToken string) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		token, ok := AuthToken(r.Context())
-		if !ok {
-			token = "success"
+		token := AuthToken(r.Context())
+		if token == "" {
+			token = "failed"
 		}
 		fmt.Fprintln(w, token)
 	})

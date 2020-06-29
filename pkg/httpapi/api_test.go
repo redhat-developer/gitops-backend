@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -18,15 +19,8 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-var testName = types.NamespacedName{
-	Namespace: "test-ns",
-	Name:      "test-secret",
-}
-
 func TestGetPipelines(t *testing.T) {
-	ts, c := makeServer(t, func(a *APIRouter) {
-		a.SecretRef = testName
-	})
+	ts, c := makeServer(t)
 	c.addContents("example/gitops", "pipelines.yaml", "master", "testdata/pipelines.yaml")
 	pipelinesURL := "https://github.com/example/gitops.git"
 
@@ -68,10 +62,6 @@ func TestGetPipelinesWithBadURL(t *testing.T) {
 	assertHTTPError(t, res, http.StatusBadRequest, "missing parameter 'url'")
 }
 
-// func TestGetPipelinesWithPrivateRepoAndNoCredentials(t *testing.T) {
-// 	t.Skip()
-// }
-
 func TestGetPipelinesWithNoAuthorizationHeader(t *testing.T) {
 	ts, _ := makeServer(t)
 	req := makeClientRequest(t, "", fmt.Sprintf("%s/pipelines", ts.URL))
@@ -81,6 +71,62 @@ func TestGetPipelinesWithNoAuthorizationHeader(t *testing.T) {
 		t.Fatal(err)
 	}
 	assertHTTPError(t, res, http.StatusForbidden, "Authentication required")
+}
+
+func TestGetPipelinesWithNamespaceAndNameInURL(t *testing.T) {
+	secretRef := types.NamespacedName{
+		Name:      "other-name",
+		Namespace: "other-ns",
+	}
+	sg := &stubSecretGetter{
+		testToken:     "test-token",
+		testName:      secretRef,
+		testAuthToken: "testing",
+	}
+	ts, c := makeServer(t, func(a *APIRouter) {
+		a.secretGetter = sg
+	})
+	c.addContents("example/gitops", "pipelines.yaml", "master", "testdata/pipelines.yaml")
+	pipelinesURL := "https://github.com/example/gitops.git"
+	options := url.Values{
+		"url":        []string{pipelinesURL},
+		"secretName": []string{"other-name"},
+		"secretNS":   []string{"other-ns"},
+	}
+	req := makeClientRequest(t, "Bearer testing", fmt.Sprintf("%s/pipelines?%s", ts.URL, options.Encode()))
+
+	res, err := ts.Client().Do(req)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertJSONResponse(t, res, map[string]interface{}{
+		"applications": []interface{}{
+			map[string]interface{}{
+				"name":         "taxi",
+				"repo_url":     "https://example.com/demo/gitops.git",
+				"environments": []interface{}{"tst-dev", "tst-stage"},
+			},
+		},
+	})
+}
+
+func TestGetPipelinesWithUnknownSecret(t *testing.T) {
+	ts, c := makeServer(t)
+	c.addContents("example/gitops", "pipelines.yaml", "master", "testdata/pipelines.yaml")
+	pipelinesURL := "https://github.com/example/gitops.git"
+	options := url.Values{
+		"url":        []string{pipelinesURL},
+		"secretName": []string{"other-name"},
+		"secretNS":   []string{"other-ns"},
+	}
+	req := makeClientRequest(t, "Bearer testing", fmt.Sprintf("%s/pipelines?%s", ts.URL, options.Encode()))
+	res, err := ts.Client().Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assertErrorResponse(t, res, http.StatusBadRequest, "unable to authenticate request")
 }
 
 func TestParseURL(t *testing.T) {
@@ -103,6 +149,10 @@ func TestParseURL(t *testing.T) {
 			t.Errorf("repo got %s, want %s", repo, tt.wantRepo)
 		}
 	}
+}
+
+func TestSecretRefFromQuery(t *testing.T) {
+	t.Skip()
 }
 
 func newClient() *stubClient {
@@ -157,7 +207,7 @@ type routerOptionFunc func(*APIRouter)
 func makeServer(t *testing.T, opts ...routerOptionFunc) (*httptest.Server, *stubClient) {
 	sg := &stubSecretGetter{
 		testToken:     "test-token",
-		testName:      testName,
+		testName:      DefaultSecretRef,
 		testAuthToken: "testing",
 	}
 	sf := &stubClientFactory{client: newClient()}
@@ -171,7 +221,6 @@ func makeServer(t *testing.T, opts ...routerOptionFunc) (*httptest.Server, *stub
 	return ts, sf.client
 }
 
-// TODO: assert the content-type.
 func assertJSONResponse(t *testing.T, res *http.Response, want map[string]interface{}) {
 	t.Helper()
 	if res.StatusCode != http.StatusOK {
@@ -187,6 +236,9 @@ func assertJSONResponse(t *testing.T, res *http.Response, want map[string]interf
 	if err != nil {
 		t.Fatal(err)
 	}
+	if h := res.Header.Get("Content-Type"); h != "application/json" {
+		t.Fatalf("wanted 'application/json' got %s: %s", h, b)
+	}
 	got := map[string]interface{}{}
 	err = json.Unmarshal(b, &got)
 	if err != nil {
@@ -194,6 +246,26 @@ func assertJSONResponse(t *testing.T, res *http.Response, want map[string]interf
 	}
 	if diff := cmp.Diff(want, got); diff != "" {
 		t.Fatalf("JSON response failed:\n%s", diff)
+	}
+}
+
+func assertErrorResponse(t *testing.T, res *http.Response, status int, want string) {
+	t.Helper()
+	if res.StatusCode != status {
+		defer res.Body.Close()
+		errMsg, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Fatalf("status code didn't match: %v (%s)", res.StatusCode, strings.TrimSpace(string(errMsg)))
+	}
+	defer res.Body.Close()
+	b, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := strings.TrimSpace(string(b)); got != want {
+		t.Fatalf("got %s, want %s", got, want)
 	}
 }
 

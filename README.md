@@ -14,7 +14,7 @@ $ kubectl create -f deploy/namespace.yaml
 
 ```shell
 $ kubectl create secret -n pipelines-app-delivery \
-  gitops-backend-secret --from-literal=token=GENERATE_ME
+  pipelines-app-gitops --from-literal=token=GENERATE_ME
 ```
 
 Then you can deploy the resources with:
