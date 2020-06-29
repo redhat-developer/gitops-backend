@@ -22,3 +22,12 @@ Then you can deploy the resources with:
 ```shell
 $ kubectl apply -k deploy
 ```
+
+## Usage
+
+Deploy the `Deployment` and `Service` into your cluster.
+
+You can fetch with `https://...?url=https://github.com/org/repo.git?secretNS=my-ns&secretNames=my-secret`
+
+The `token` field in the named secret will be extracted and used to authenticate
+the request to the upstream Git hosting service.
