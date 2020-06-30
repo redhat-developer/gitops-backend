@@ -237,7 +237,10 @@ func assertJSONResponse(t *testing.T, res *http.Response, want map[string]interf
 		t.Fatal(err)
 	}
 	if h := res.Header.Get("Content-Type"); h != "application/json" {
-		t.Fatalf("wanted 'application/json' got %s: %s", h, b)
+		t.Fatalf("wanted 'application/json' got %s", h)
+	}
+	if h := res.Header.Get("Access-Control-Allow-Origin"); h != "*" {
+		t.Fatalf("wanted '*' got %s", h)
 	}
 	got := map[string]interface{}{}
 	err = json.Unmarshal(b, &got)

@@ -74,8 +74,7 @@ func (a *APIRouter) GetPipelines(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("failed to unmarshal pipelines.yaml: %s", err.Error()), http.StatusBadRequest)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(pipelinesToAppsResponse(pipelines))
+	marshalResponse(w, pipelinesToAppsResponse(pipelines))
 }
 
 func (a *APIRouter) getAuthenticatedGitClient(ctx context.Context, req *http.Request, fetchURL string) (git.SCM, error) {
@@ -116,4 +115,10 @@ func secretRefFromQuery(v url.Values) (types.NamespacedName, bool) {
 		}, true
 	}
 	return types.NamespacedName{}, false
+}
+
+func marshalResponse(w http.ResponseWriter, v interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	json.NewEncoder(w).Encode(v)
 }
