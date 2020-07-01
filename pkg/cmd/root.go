@@ -17,7 +17,8 @@ import (
 )
 
 const (
-	portFlag = "port"
+	portFlag     = "port"
+	insecureFlag = "insecure"
 )
 
 func init() {
@@ -60,6 +61,13 @@ func makeHTTPCmd() *cobra.Command {
 		"port to serve requests on",
 	)
 	logIfError(viper.BindPFlag(portFlag, cmd.Flags().Lookup(portFlag)))
+
+	cmd.Flags().Bool(
+		insecureFlag,
+		false,
+		"allow insecure TLS requests",
+	)
+	logIfError(viper.BindPFlag(insecureFlag, cmd.Flags().Lookup(insecureFlag)))
 	return cmd
 }
 
@@ -84,6 +92,9 @@ func makeAPIRouter(m metrics.Interface) (*httpapi.APIRouter, error) {
 		return nil, err
 	}
 	cf := git.NewClientFactory(git.NewDriverIdentifier(), m)
-	router := httpapi.NewRouter(cf, secrets.NewFromConfig(config, false))
+	secretGetter := secrets.NewFromConfig(
+		&rest.Config{Host: config.Host},
+		viper.GetBool(insecureFlag))
+	router := httpapi.NewRouter(cf, secretGetter)
 	return router, nil
 }

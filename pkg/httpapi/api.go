@@ -51,7 +51,7 @@ func (a *APIRouter) GetPipelines(w http.ResponseWriter, r *http.Request) {
 
 	client, err := a.getAuthenticatedGitClient(r.Context(), r, urlToFetch)
 	if err != nil {
-		log.Println("ERROR: failed to get an authenticated client")
+		log.Printf("ERROR: failed to get an authenticated client: %s", err)
 		http.Error(w, "unable to authenticate request", http.StatusBadRequest)
 		return
 	}
@@ -83,6 +83,7 @@ func (a *APIRouter) getAuthenticatedGitClient(ctx context.Context, req *http.Req
 	if !ok {
 		secret = a.secretRef
 	}
+	log.Printf("using secret from %#v", secret)
 	token, err := a.secretGetter.SecretToken(ctx, token, secret)
 	if err != nil {
 		return nil, err

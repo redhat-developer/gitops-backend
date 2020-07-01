@@ -17,5 +17,5 @@ spec:
       serviceAccountName: pipelines-app-delivery
       containers:
         - name: pipelines-app-delivery-http
-          image: quay.io/kmcdermo/gitops-backend:5fa2a45
+          image: quay.io/kmcdermo/gitops-backend:e8a5eef
           imagePullPolicy: Always
