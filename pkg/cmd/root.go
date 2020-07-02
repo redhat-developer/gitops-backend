@@ -11,6 +11,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rhd-gitops-examples/gitops-backend/pkg/git"
+	"github.com/rhd-gitops-examples/gitops-backend/pkg/health"
 	"github.com/rhd-gitops-examples/gitops-backend/pkg/httpapi"
 	"github.com/rhd-gitops-examples/gitops-backend/pkg/httpapi/secrets"
 	"github.com/rhd-gitops-examples/gitops-backend/pkg/metrics"
@@ -45,6 +46,7 @@ func makeHTTPCmd() *cobra.Command {
 			log.Printf("listening on %s", listen)
 
 			http.Handle("/metrics", promhttp.Handler())
+			http.HandleFunc("/health", health.Handler)
 
 			router, err := makeAPIRouter(m)
 			if err != nil {
