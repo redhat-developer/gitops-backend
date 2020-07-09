@@ -13,7 +13,7 @@ $ kubectl create -f deploy/namespace.yaml
 ```
 
 ```shell
-$ kubectl create secret -n pipelines-app-delivery \
+$ kubectl create secret generic -n pipelines-app-delivery \
   pipelines-app-gitops --from-literal=token=GENERATE_ME
 ```
 
