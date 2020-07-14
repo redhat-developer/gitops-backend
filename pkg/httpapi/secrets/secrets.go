@@ -42,7 +42,7 @@ func (k KubeSecretGetter) SecretToken(ctx context.Context, authToken string, id 
 	if err != nil {
 		return "", fmt.Errorf("failed to create a client from the config: %w", err)
 	}
-	secret, err := coreClient.CoreV1().Secrets(id.Namespace).Get(ctx, id.Name, metav1.GetOptions{})
+	secret, err := coreClient.CoreV1().Secrets(id.Namespace).Get(id.Name, metav1.GetOptions{})
 	if err != nil {
 		return "", fmt.Errorf("error getting secret %s/%s: %w", id.Namespace, id.Name, err)
 	}

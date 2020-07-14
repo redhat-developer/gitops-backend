@@ -3,8 +3,8 @@ package httpapi
 import (
 	"fmt"
 
-	"github.com/bigkevmcd/peanut/pkg/gitfs"
 	"github.com/go-git/go-git/v5"
+	"github.com/rhd-gitops-examples/gitops-backend/pkg/gitfs"
 )
 
 func applicationEnvironment(c *config, appName, envName string) (map[string]string, error) {

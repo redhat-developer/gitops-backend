@@ -3,14 +3,10 @@ package parser
 import (
 	"sort"
 
-	"github.com/go-git/go-git/v5"
-
 	"sigs.k8s.io/kustomize/k8sdeps"
 	"sigs.k8s.io/kustomize/pkg/fs"
 	"sigs.k8s.io/kustomize/pkg/loader"
 	"sigs.k8s.io/kustomize/pkg/target"
-
-	"github.com/rhd-gitops-examples/gitops-backend/pkg/gitfs"
 )
 
 const (
@@ -48,7 +44,9 @@ type Service struct {
 	Images    []string
 }
 
-// Parse takes a path to a kustomization.yaml file and extracts the service
+// ParseConfigFromURL takes a url and path, and parses the configuration into apps.
+//
+// The pathto a kustomization.yaml file and extracts the service
 // configuration from the built resources.
 //
 // Currently assumes that the standard Kubernetes annotations are used
@@ -56,27 +54,10 @@ type Service struct {
 // name is the service name)
 //
 // Also multi-Deployment services are not supported currently.
-func Parse(path string) (*Config, error) {
-	fs := fs.MakeRealFS()
-	return ParseConfig(path, fs)
-}
-
-// ParseFromGit takes a go-git CloneOptions struct and a filepath, and extracts
-// the service configuration from there.
-func ParseFromGit(path string, opts *git.CloneOptions) (*Config, error) {
-	gfs, err := gitfs.NewInMemoryFromOptions(opts)
-	if err != nil {
-		return nil, err
-	}
-	return ParseConfig(path, gfs)
-}
-
-// ParseConfig takes a path and an implementation of the kustomize fs.FileSystem
-// and parses the configuration into apps.
-func ParseConfig(path string, files fs.FileSystem) (*Config, error) {
+func ParseConfigFromURL(url, path string) (*Config, error) {
 	cfg := &Config{Apps: []*App{}}
 	k8sfactory := k8sdeps.NewFactory()
-	ldr, err := loader.NewLoader(path, files)
+	ldr, err := loader.NewLoader(path, fs.MakeRealFS())
 	if err != nil {
 		return nil, err
 	}

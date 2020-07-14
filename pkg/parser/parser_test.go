@@ -3,22 +3,21 @@ package parser
 import (
 	"testing"
 
-	"github.com/go-git/go-git/v5"
 	"github.com/google/go-cmp/cmp"
+	"github.com/rhd-gitops-examples/gitops-backend/test"
 )
 
-func TestParseNoFile(t *testing.T) {
-	app, err := Parse("testdata")
-
+func TestParseConfigFromURLWithNoFile(t *testing.T) {
+	app, err := ParseConfigFromURL(".", "testdata")
 	if app != nil {
 		t.Errorf("did not expect to parse an app: %#v", app)
 	}
-	if err == nil {
-		t.Fatal("expected to get an error")
+	if !test.MatchError(t, "unable to find one of", err) {
+		t.Fatalf("error didn't match: %s", err)
 	}
 }
 
-func TestParseApplication(t *testing.T) {
+func TestParseConfigFromURL(t *testing.T) {
 	parseTests := []struct {
 		filename    string
 		description string
@@ -61,7 +60,7 @@ func TestParseApplication(t *testing.T) {
 	}
 
 	for _, tt := range parseTests {
-		app, err := Parse(tt.filename)
+		app, err := ParseConfigFromURL(".", tt.filename)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -69,31 +68,6 @@ func TestParseApplication(t *testing.T) {
 			t.Errorf("%s failed to parse:\n%s", tt.filename, diff)
 		}
 	}
-}
-
-func TestParseApplicationFromGit(t *testing.T) {
-	app, err := ParseFromGit(
-		"pkg/parser/testdata/go-demo",
-		&git.CloneOptions{
-			URL:   "../..",
-			Depth: 1,
-		})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	want := &Config{
-		Apps: []*App{
-			{
-				Name: "go-demo",
-				Services: []*Service{
-					{Name: "go-demo-http", Replicas: 1, Images: []string{"bigkevmcd/go-demo:876ecb3"}},
-					{Name: "redis", Replicas: 1, Images: []string{"redis:6-alpine"}},
-				},
-			},
-		},
-	}
-	assertCmp(t, want, app, "failed to match app")
 }
 
 func TestAppName(t *testing.T) {
