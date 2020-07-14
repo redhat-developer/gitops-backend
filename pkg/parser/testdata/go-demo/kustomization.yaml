@@ -1,0 +1,8 @@
+commonLabels:
+  app.kubernetes.io/part-of: go-demo
+resources:
+- deployment.yaml
+- service.yaml
+- configMap.yaml
+- redis_service.yaml
+- redis_deployment.yaml

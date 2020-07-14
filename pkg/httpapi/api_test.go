@@ -129,6 +129,25 @@ func TestGetPipelinesWithUnknownSecret(t *testing.T) {
 	assertErrorResponse(t, res, http.StatusBadRequest, "unable to authenticate request")
 }
 
+func TestGetPipelineApplication(t *testing.T) {
+	ts, c := makeServer(t)
+	c.addContents("example/gitops", "pipelines.yaml", "master", "testdata/pipelines.yaml")
+	pipelinesURL := "https://github.com/example/gitops.git"
+	options := url.Values{
+		"url": []string{pipelinesURL},
+	}
+	req := makeClientRequest(t, "Bearer testing", fmt.Sprintf("%s/application/%s/%s?%s", ts.URL, "taxi", "tst-dev", options.Encode()))
+	res, err := ts.Client().Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assertJSONResponse(t, res, map[string]interface{}{
+		"environment": "tst-dev",
+	})
+
+}
+
 func TestParseURL(t *testing.T) {
 	urlTests := []struct {
 		u        string
@@ -149,10 +168,6 @@ func TestParseURL(t *testing.T) {
 			t.Errorf("repo got %s, want %s", repo, tt.wantRepo)
 		}
 	}
-}
-
-func TestSecretRefFromQuery(t *testing.T) {
-	t.Skip()
 }
 
 func newClient() *stubClient {

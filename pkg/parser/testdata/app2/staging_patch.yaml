@@ -1,0 +1,3 @@
+- op: replace
+  path: /spec/template/spec/volumes/0/configMap/name
+  value: stage-www-files

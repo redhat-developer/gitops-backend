@@ -1,0 +1,12 @@
+bases:
+- https://github.com/bigkevmcd/taxi/deploy
+images:
+- name: quay.io/kmcdermo/taxi
+  newTag: "147036"
+patchesJson6902:
+- target:
+    version: v1
+    group: apps
+    kind: Deployment
+    name: taxi
+  path: staging_patch.yaml

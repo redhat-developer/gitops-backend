@@ -31,7 +31,7 @@ type APIRouter struct {
 	secretRef        types.NamespacedName
 }
 
-// GePipelines fetches and returns the pipeline body.
+// GetPipelines fetches and returns the pipeline body.
 func (a *APIRouter) GetPipelines(w http.ResponseWriter, r *http.Request) {
 	urlToFetch := r.URL.Query().Get("url")
 	if urlToFetch == "" {
@@ -77,6 +77,58 @@ func (a *APIRouter) GetPipelines(w http.ResponseWriter, r *http.Request) {
 	marshalResponse(w, pipelinesToAppsResponse(pipelines))
 }
 
+// GetPipelines fetches the environments for a specific application.
+func (a *APIRouter) GetApplication(w http.ResponseWriter, r *http.Request) {
+	urlToFetch := r.URL.Query().Get("url")
+	if urlToFetch == "" {
+		log.Println("ERROR: could not get url from request")
+		http.Error(w, "missing parameter 'url'", http.StatusBadRequest)
+		return
+	}
+
+	// TODO: replace this with logr or sugar.
+	log.Printf("urlToFetch = %#v\n", urlToFetch)
+	repo, err := parseURL(urlToFetch)
+	if err != nil {
+		log.Printf("ERROR: failed to parse the URL: %s", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	client, err := a.getAuthenticatedGitClient(r.Context(), r, urlToFetch)
+	if err != nil {
+		log.Printf("ERROR: failed to get an authenticated client: %s", err)
+		http.Error(w, "unable to authenticate request", http.StatusBadRequest)
+		return
+	}
+
+	// TODO: don't send back the error directly.
+	//
+	// Add a "not found" error that can be returned, otherwise it's a
+	// StatusInternalServerError.
+	body, err := client.FileContents(r.Context(), repo, "pipelines.yaml", "master")
+	if err != nil {
+		log.Printf("ERROR: failed to get file contents for repo %#v: %s", repo, err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	pipelines := &config{}
+	err = yaml.Unmarshal(body, &pipelines)
+	if err != nil {
+		log.Printf("ERROR: failed to unmarshal body %s", err)
+		http.Error(w, fmt.Sprintf("failed to unmarshal pipelines.yaml: %s", err.Error()), http.StatusBadRequest)
+		return
+	}
+	params := httprouter.ParamsFromContext(r.Context())
+	appEnvironments, err := applicationEnvironment(pipelines, params.ByName("name"), params.ByName("env"))
+	if err != nil {
+		log.Printf("ERROR: failed to get application data: %s", err)
+		http.Error(w, "failed to extract data", http.StatusBadRequest)
+		return
+	}
+	marshalResponse(w, appEnvironments)
+}
+
 func (a *APIRouter) getAuthenticatedGitClient(ctx context.Context, req *http.Request, fetchURL string) (git.SCM, error) {
 	token := AuthToken(ctx)
 	secret, ok := secretRefFromQuery(req.URL.Query())
@@ -95,6 +147,7 @@ func (a *APIRouter) getAuthenticatedGitClient(ctx context.Context, req *http.Req
 func NewRouter(c git.ClientFactory, s secrets.SecretGetter) *APIRouter {
 	api := &APIRouter{Router: httprouter.New(), gitClientFactory: c, secretGetter: s, secretRef: DefaultSecretRef}
 	api.HandlerFunc(http.MethodGet, "/pipelines", api.GetPipelines)
+	api.HandlerFunc(http.MethodGet, "/application/:name/:env", api.GetApplication)
 	return api
 }
 
