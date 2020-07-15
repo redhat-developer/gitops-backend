@@ -1,12 +1,15 @@
 package parser
 
 import (
-	"sort"
+	"github.com/go-git/go-git/v5"
 
 	"sigs.k8s.io/kustomize/k8sdeps"
 	"sigs.k8s.io/kustomize/pkg/fs"
+	"sigs.k8s.io/kustomize/pkg/gvk"
 	"sigs.k8s.io/kustomize/pkg/loader"
 	"sigs.k8s.io/kustomize/pkg/target"
+
+	"github.com/rhd-gitops-examples/gitops-backend/pkg/gitfs"
 )
 
 const (
@@ -14,50 +17,27 @@ const (
 	appLabel     = "app.kubernetes.io/part-of"
 )
 
-// Config is a representation of the apps and services, and configurations for
-// the services.
-type Config struct {
-	Apps []*App
+type Resource struct {
+	Group     string `json:"group"`
+	Version   string `json:"version"`
+	Kind      string `json:"kind"`
+	Name      string `json:"name"`
+	Namespace string `json:"name"`
 }
 
-// App gets the named app from the config, or returns nil if none exist.
-func (c *Config) App(s string) *App {
-	for _, v := range c.Apps {
-		if v.Name == s {
-			return v
-		}
+// ParseFromGit takes a go-git CloneOptions struct and a filepath, and extracts
+// the service configuration from there.
+func ParseFromGit(path string, opts *git.CloneOptions) ([]*Resource, error) {
+	gfs, err := gitfs.NewInMemoryFromOptions(opts)
+	if err != nil {
+		return nil, err
 	}
-	return nil
+	return parseConfig(path, gfs)
 }
 
-// App is a component with multiple services, and in multiple environments.
-type App struct {
-	Name     string
-	Services []*Service
-}
-
-// Service is a representation of a component within the Apps/Services model.
-type Service struct {
-	Name      string
-	Namespace string
-	Replicas  int64
-	Images    []string
-}
-
-// ParseConfigFromURL takes a url and path, and parses the configuration into apps.
-//
-// The pathto a kustomization.yaml file and extracts the service
-// configuration from the built resources.
-//
-// Currently assumes that the standard Kubernetes annotations are used
-// (app.kubernetes.io) to identify apps and services (part-of is the app name,
-// name is the service name)
-//
-// Also multi-Deployment services are not supported currently.
-func ParseConfigFromURL(url, path string) (*Config, error) {
-	cfg := &Config{Apps: []*App{}}
+func parseConfig(path string, files fs.FileSystem) ([]*Resource, error) {
 	k8sfactory := k8sdeps.NewFactory()
-	ldr, err := loader.NewLoader(path, fs.MakeRealFS())
+	ldr, err := loader.NewLoader(path, files)
 	if err != nil {
 		return nil, err
 	}
@@ -78,48 +58,23 @@ func ParseConfigFromURL(url, path string) (*Config, error) {
 	if len(r) == 0 {
 		return nil, nil
 	}
+
+	resources := []*Resource{}
 	for k, v := range r {
-		gvk := k.Gvk()
-		switch gvk.Kind {
-		case "Deployment":
-			name := appName(v.GetLabels())
-			if name == "" {
-				continue
-			}
-			app := cfg.App(name)
-			if app == nil {
-				app = &App{Name: name}
-				cfg.Apps = append(cfg.Apps, app)
-			}
-			svc := extractService(v.Map())
-			app.Services = append(app.Services, svc)
-			sort.Slice(app.Services, func(i, j int) bool { return app.Services[i].Name < app.Services[j].Name })
-		}
+		resources = append(resources, extractResource(k.Gvk(), v.Map()))
 	}
-
-	return cfg, nil
+	return resources, nil
 }
 
-func appName(r map[string]string) string {
-	return r[appLabel]
-}
-
-// TODO: write a generic dotted path walker for the map[string]interface{}
-// (again).
-func extractService(v map[string]interface{}) *Service {
+func extractResource(g gvk.Gvk, v map[string]interface{}) *Resource {
 	meta := v["metadata"].(map[string]interface{})
-	spec := v["spec"].(map[string]interface{})
-	templateSpec := spec["template"].(map[string]interface{})["spec"].(map[string]interface{})
-	svc := &Service{
+	return &Resource{
 		Name:      mapString("name", meta),
 		Namespace: mapString("namespace", meta),
-		Replicas:  spec["replicas"].(int64),
-		Images:    []string{},
+		Group:     g.Group,
+		Version:   g.Version,
+		Kind:      g.Kind,
 	}
-	for _, v := range templateSpec["containers"].([]interface{}) {
-		svc.Images = append(svc.Images, mapString("image", v.(map[string]interface{})))
-	}
-	return svc
 }
 
 func mapString(k string, v map[string]interface{}) string {
