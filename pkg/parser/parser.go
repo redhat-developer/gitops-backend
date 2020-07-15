@@ -22,7 +22,7 @@ type Resource struct {
 	Version   string `json:"version"`
 	Kind      string `json:"kind"`
 	Name      string `json:"name"`
-	Namespace string `json:"name"`
+	Namespace string `json:"namespace"`
 }
 
 // ParseFromGit takes a go-git CloneOptions struct and a filepath, and extracts
