@@ -17,6 +17,7 @@ const (
 	appLabel     = "app.kubernetes.io/part-of"
 )
 
+// Resource is the basic metadata for a Kubernetes manifest.
 type Resource struct {
 	Group     string `json:"group"`
 	Version   string `json:"version"`

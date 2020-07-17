@@ -4,14 +4,15 @@ config:
   pipelines:
     name: tst-cicd
 environments:
-- name: new-env
-  cluster: https://kubernetes.testing.svc
+- name: security
+  cluster: https://security.testing.svc
   pipelines:
     integration:
       bindings:
       - github-pr-binding
       template: app-ci-template
 - name: tst-dev
+  cluster: https://dev.testing.svc
   apps:
   - name: taxi
     services:
@@ -33,7 +34,8 @@ environments:
       secret:
         name: webhook-secret-tst-dev-taxi-svc
         namespace: tst-cicd
-- name: tst-stage
+- name: tst-staging
+  cluster: https://staging.testing.svc
   apps:
   - name: taxi
     services:

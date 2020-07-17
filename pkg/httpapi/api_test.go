@@ -12,8 +12,10 @@ import (
 	"strings"
 	"testing"
 
+	gogit "github.com/go-git/go-git/v5"
 	"github.com/google/go-cmp/cmp"
 	"github.com/rhd-gitops-examples/gitops-backend/pkg/git"
+	"github.com/rhd-gitops-examples/gitops-backend/pkg/parser"
 	"github.com/rhd-gitops-examples/gitops-backend/test"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/yaml"
@@ -35,7 +37,7 @@ func TestGetPipelines(t *testing.T) {
 			map[string]interface{}{
 				"name":         "taxi",
 				"repo_url":     "https://example.com/demo/gitops.git",
-				"environments": []interface{}{"tst-dev", "tst-stage"},
+				"environments": []interface{}{"tst-dev", "tst-staging"},
 			},
 		},
 	})
@@ -105,7 +107,7 @@ func TestGetPipelinesWithNamespaceAndNameInURL(t *testing.T) {
 			map[string]interface{}{
 				"name":         "taxi",
 				"repo_url":     "https://example.com/demo/gitops.git",
-				"environments": []interface{}{"tst-dev", "tst-stage"},
+				"environments": []interface{}{"tst-dev", "tst-staging"},
 			},
 		},
 	})
@@ -130,7 +132,17 @@ func TestGetPipelinesWithUnknownSecret(t *testing.T) {
 }
 
 func TestGetPipelineApplication(t *testing.T) {
-	ts, c := makeServer(t)
+	testResource := &parser.Resource{
+		Group:     "",
+		Version:   "v1",
+		Kind:      "Deployment",
+		Name:      "test-deployment",
+		Namespace: "test-ns",
+	}
+
+	ts, c := makeServer(t, func(a *APIRouter) {
+		a.resourceParser = stubResourceParser(testResource)
+	})
 	c.addContents("example/gitops", "pipelines.yaml", "master", "testdata/pipelines.yaml")
 	pipelinesURL := "https://github.com/example/gitops.git"
 	options := url.Values{
@@ -144,6 +156,16 @@ func TestGetPipelineApplication(t *testing.T) {
 
 	assertJSONResponse(t, res, map[string]interface{}{
 		"environment": "tst-dev",
+		"cluster":     "https://dev.testing.svc",
+		"resources": []interface{}{
+			map[string]interface{}{
+				"group":     "",
+				"kind":      "Deployment",
+				"name":      "test-deployment",
+				"namespace": "test-ns",
+				"version":   "v1",
+			},
+		},
 	})
 
 }
@@ -307,4 +329,10 @@ type stubClientFactory struct {
 func (s stubClientFactory) Create(url, token string) (git.SCM, error) {
 	// TODO: this should match on the URL/token combo.
 	return s.client, nil
+}
+
+func stubResourceParser(r ...*parser.Resource) parser.ResourceParser {
+	return func(path string, opts *gogit.CloneOptions) ([]*parser.Resource, error) {
+		return r, nil
+	}
 }

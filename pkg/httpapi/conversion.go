@@ -49,3 +49,12 @@ type environment struct {
 type application struct {
 	Name string `json:"name,omitempty"`
 }
+
+func (c *config) findEnvironment(n string) *environment {
+	for _, e := range c.Environments {
+		if e.Name == n {
+			return e
+		}
+	}
+	return nil
+}
