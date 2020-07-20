@@ -21,12 +21,38 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
+const (
+	testRef = "7638417db6d59f3c431d3e1f261cc637155684cd"
+)
+
 func TestGetPipelines(t *testing.T) {
 	ts, c := makeServer(t)
 	c.addContents("example/gitops", "pipelines.yaml", "master", "testdata/pipelines.yaml")
 	pipelinesURL := "https://github.com/example/gitops.git"
 
 	req := makeClientRequest(t, "Bearer testing", fmt.Sprintf("%s/pipelines?url=%s", ts.URL, pipelinesURL))
+	res, err := ts.Client().Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assertJSONResponse(t, res, map[string]interface{}{
+		"applications": []interface{}{
+			map[string]interface{}{
+				"name":         "taxi",
+				"repo_url":     "https://example.com/demo/gitops.git",
+				"environments": []interface{}{"tst-dev", "tst-staging"},
+			},
+		},
+	})
+}
+
+func TestGetPipelinesWithASpecificRef(t *testing.T) {
+	ts, c := makeServer(t)
+	c.addContents("example/gitops", "pipelines.yaml", testRef, "testdata/pipelines.yaml")
+	pipelinesURL := "https://github.com/example/gitops.git"
+
+	req := makeClientRequest(t, "Bearer testing", fmt.Sprintf("%s/pipelines?url=%s&ref=%s", ts.URL, pipelinesURL, testRef))
 	res, err := ts.Client().Do(req)
 	if err != nil {
 		t.Fatal(err)
@@ -167,7 +193,45 @@ func TestGetPipelineApplication(t *testing.T) {
 			},
 		},
 	})
+}
 
+func TestGetPipelineApplicationWithRef(t *testing.T) {
+	testResource := &parser.Resource{
+		Group:     "",
+		Version:   "v1",
+		Kind:      "Deployment",
+		Name:      "test-deployment",
+		Namespace: "test-ns",
+	}
+
+	ts, c := makeServer(t, func(a *APIRouter) {
+		a.resourceParser = stubResourceParser(testResource)
+	})
+	c.addContents("example/gitops", "pipelines.yaml", testRef, "testdata/pipelines.yaml")
+	pipelinesURL := "https://github.com/example/gitops.git"
+	options := url.Values{
+		"url": []string{pipelinesURL},
+		"ref": []string{testRef},
+	}
+	req := makeClientRequest(t, "Bearer testing", fmt.Sprintf("%s/application/%s/%s?%s", ts.URL, "taxi", "tst-dev", options.Encode()))
+	res, err := ts.Client().Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assertJSONResponse(t, res, map[string]interface{}{
+		"environment": "tst-dev",
+		"cluster":     "https://dev.testing.svc",
+		"resources": []interface{}{
+			map[string]interface{}{
+				"group":     "",
+				"kind":      "Deployment",
+				"name":      "test-deployment",
+				"namespace": "test-ns",
+				"version":   "v1",
+			},
+		},
+	})
 }
 
 func TestParseURL(t *testing.T) {

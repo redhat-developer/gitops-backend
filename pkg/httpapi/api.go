@@ -24,6 +24,8 @@ var DefaultSecretRef = types.NamespacedName{
 	Namespace: "pipelines-app-delivery",
 }
 
+const defaultRef = "master"
+
 // APIRouter is an HTTP API for accessing app configurations.
 type APIRouter struct {
 	*httprouter.Router
@@ -83,7 +85,7 @@ func (a *APIRouter) GetPipelines(w http.ResponseWriter, r *http.Request) {
 	// Add a "not found" error that can be returned, otherwise it's a
 	// StatusInternalServerError.
 	log.Println("got an authenticated client")
-	body, err := client.FileContents(r.Context(), repo, "pipelines.yaml", "master")
+	body, err := client.FileContents(r.Context(), repo, "pipelines.yaml", refFromQuery(r.URL.Query()))
 	if err != nil {
 		log.Printf("ERROR: failed to get file contents for repo %#v: %s", repo, err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -134,7 +136,7 @@ func (a *APIRouter) GetApplication(w http.ResponseWriter, r *http.Request) {
 	//
 	// Add a "not found" error that can be returned, otherwise it's a
 	// StatusInternalServerError.
-	body, err := client.FileContents(r.Context(), repo, "pipelines.yaml", "master")
+	body, err := client.FileContents(r.Context(), repo, "pipelines.yaml", refFromQuery(r.URL.Query()))
 	if err != nil {
 		log.Printf("ERROR: failed to get file contents for repo %#v: %s", repo, err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -193,6 +195,13 @@ func secretRefFromQuery(v url.Values) (types.NamespacedName, bool) {
 		}, true
 	}
 	return types.NamespacedName{}, false
+}
+
+func refFromQuery(v url.Values) string {
+	if ref := v.Get("ref"); ref != "" {
+		return ref
+	}
+	return defaultRef
 }
 
 func marshalResponse(w http.ResponseWriter, v interface{}) {
