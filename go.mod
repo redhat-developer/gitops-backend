@@ -12,6 +12,7 @@ require (
 	github.com/go-openapi/swag v0.19.9
 	github.com/go-openapi/validate v0.19.10
 	github.com/gogo/protobuf v1.3.1 // indirect
+	github.com/golang/mock v1.3.1
 	github.com/google/go-cmp v0.4.1
 	github.com/google/gofuzz v1.1.0 // indirect
 	github.com/googleapis/gnostic v0.4.0 // indirect
