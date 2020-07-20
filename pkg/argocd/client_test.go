@@ -41,5 +41,4 @@ func TestApplicationResources(t *testing.T) {
 	if diff := cmp.Diff(want, res); diff != "" {
 		t.Fatalf("ApplicationResources() failed:\n%s", diff)
 	}
-
 }

@@ -11,17 +11,12 @@ import (
 	"github.com/rhd-gitops-examples/gitops-backend/pkg/resource"
 )
 
-type argoAPIClient interface {
-}
-
-type ArgoCDClient interface {
-	ApplicationResources(name string) ([]*resource.Resource, error)
-}
-
+// ArgoCD is a wrapper around a Swagger client.
 type ArgoCD struct {
 	apiClient *apiclient.Argocd
 }
 
+// ApplicationResources gets a list of resources from ArgoCD for an application.
 func (a ArgoCD) ApplicationResources(name string) ([]*resource.Resource, error) {
 	params := appsvc.NewGetMixin8Params().WithName(name)
 	res, err := a.apiClient.ApplicationService.GetMixin8(params)

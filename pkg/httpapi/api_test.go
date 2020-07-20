@@ -16,6 +16,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/rhd-gitops-examples/gitops-backend/pkg/git"
 	"github.com/rhd-gitops-examples/gitops-backend/pkg/parser"
+	"github.com/rhd-gitops-examples/gitops-backend/pkg/resource"
 	"github.com/rhd-gitops-examples/gitops-backend/test"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/yaml"
@@ -110,6 +111,7 @@ func TestGetPipelinesWithNamespaceAndNameInURL(t *testing.T) {
 		testToken:     "test-token",
 		testName:      secretRef,
 		testAuthToken: "testing",
+		testKey:       "token",
 	}
 	ts, c := makeServer(t, func(a *APIRouter) {
 		a.secretGetter = sg
@@ -158,7 +160,7 @@ func TestGetPipelinesWithUnknownSecret(t *testing.T) {
 }
 
 func TestGetPipelineApplication(t *testing.T) {
-	testResource := &parser.Resource{
+	testResource := &resource.Resource{
 		Group:     "",
 		Version:   "v1",
 		Kind:      "Deployment",
@@ -196,7 +198,7 @@ func TestGetPipelineApplication(t *testing.T) {
 }
 
 func TestGetPipelineApplicationWithRef(t *testing.T) {
-	testResource := &parser.Resource{
+	testResource := &resource.Resource{
 		Group:     "",
 		Version:   "v1",
 		Kind:      "Deployment",
@@ -310,6 +312,7 @@ func makeServer(t *testing.T, opts ...routerOptionFunc) (*httptest.Server, *stub
 		testToken:     "test-token",
 		testName:      DefaultSecretRef,
 		testAuthToken: "testing",
+		testKey:       "token",
 	}
 	sf := &stubClientFactory{client: newClient()}
 	router := NewRouter(sf, sg)
@@ -377,10 +380,11 @@ type stubSecretGetter struct {
 	testAuthToken string
 	testToken     string
 	testName      types.NamespacedName
+	testKey       string
 }
 
-func (f *stubSecretGetter) SecretToken(ctx context.Context, authToken string, key types.NamespacedName) (string, error) {
-	if key == f.testName && authToken == f.testAuthToken {
+func (f *stubSecretGetter) SecretToken(ctx context.Context, authToken string, id types.NamespacedName, key string) (string, error) {
+	if id == f.testName && authToken == f.testAuthToken && key == f.testKey {
 		return f.testToken, nil
 	}
 	return "", errors.New("failed to get a secret token")
@@ -395,8 +399,8 @@ func (s stubClientFactory) Create(url, token string) (git.SCM, error) {
 	return s.client, nil
 }
 
-func stubResourceParser(r ...*parser.Resource) parser.ResourceParser {
-	return func(path string, opts *gogit.CloneOptions) ([]*parser.Resource, error) {
+func stubResourceParser(r ...*resource.Resource) parser.ResourceParser {
+	return func(path string, opts *gogit.CloneOptions) ([]*resource.Resource, error) {
 		return r, nil
 	}
 }

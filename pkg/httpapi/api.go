@@ -167,7 +167,7 @@ func (a *APIRouter) getAuthToken(ctx context.Context, req *http.Request) (string
 	}
 	// TODO: this should be using a logger implementation.
 	log.Printf("using secret from %#v", secret)
-	token, err := a.secretGetter.SecretToken(ctx, token, secret)
+	token, err := a.secretGetter.SecretToken(ctx, token, secret, "token")
 	if err != nil {
 		return "", err
 	}
