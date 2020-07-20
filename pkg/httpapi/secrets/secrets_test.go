@@ -26,7 +26,7 @@ func TestSecret(t *testing.T) {
 		return nil, errors.New("failed")
 	}
 
-	secret, err := g.SecretToken(context.TODO(), "auth token", testID)
+	secret, err := g.SecretToken(context.TODO(), "auth token", testID, "token")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -45,7 +45,7 @@ func TestSecretWithMissingSecret(t *testing.T) {
 		return nil, errors.New("failed")
 	}
 
-	_, err := g.SecretToken(context.TODO(), "auth token", testID)
+	_, err := g.SecretToken(context.TODO(), "auth token", testID, "token")
 	if err.Error() != `error getting secret test-ns/test-secret: secrets "test-secret" not found` {
 		t.Fatal(err)
 	}

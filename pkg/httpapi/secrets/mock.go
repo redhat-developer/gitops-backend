@@ -3,6 +3,7 @@ package secrets
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -20,8 +21,8 @@ type MockSecret struct {
 }
 
 // Secret implements the SecretGetter interface.
-func (k MockSecret) SecretToken(ctx context.Context, authToken string, secretID types.NamespacedName) (string, error) {
-	token, ok := k.secrets[key(authToken, secretID)]
+func (k MockSecret) SecretToken(ctx context.Context, authToken string, secretID types.NamespacedName, key string) (string, error) {
+	token, ok := k.secrets[mockKey(authToken, secretID, key)]
 	if !ok {
 		return "", fmt.Errorf("mock not found")
 	}
@@ -29,10 +30,10 @@ func (k MockSecret) SecretToken(ctx context.Context, authToken string, secretID 
 }
 
 // AddStubResponse is a mock method that sets up a token to be returned.
-func (k MockSecret) AddStubResponse(authToken string, secretID types.NamespacedName, token string) {
-	k.secrets[key(authToken, secretID)] = token
+func (k MockSecret) AddStubResponse(authToken string, secretID types.NamespacedName, token, key string) {
+	k.secrets[mockKey(authToken, secretID, key)] = token
 }
 
-func key(token string, n types.NamespacedName) string {
-	return fmt.Sprintf("%s:%s:%s", token, n.Name, n.Namespace)
+func mockKey(token string, n types.NamespacedName, key string) string {
+	return strings.Join([]string{token, n.Name, n.Namespace, key}, ":")
 }

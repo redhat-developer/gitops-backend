@@ -33,7 +33,7 @@ func New(c RESTConfigFactory) *KubeSecretGetter {
 
 // SecretToken looks for a namespaced secret, and returns the 'token' key from
 // it, or an error if not found.
-func (k KubeSecretGetter) SecretToken(ctx context.Context, authToken string, id types.NamespacedName) (string, error) {
+func (k KubeSecretGetter) SecretToken(ctx context.Context, authToken string, id types.NamespacedName, key string) (string, error) {
 	cfg, err := k.configFactory.Create(authToken)
 	if err != nil {
 		return "", fmt.Errorf("failed to create a REST config: %w", err)
@@ -46,7 +46,7 @@ func (k KubeSecretGetter) SecretToken(ctx context.Context, authToken string, id 
 	if err != nil {
 		return "", fmt.Errorf("error getting secret %s/%s: %w", id.Namespace, id.Name, err)
 	}
-	token, ok := secret.Data["token"]
+	token, ok := secret.Data[key]
 	if !ok {
 		return "", fmt.Errorf("secret invalid, no 'token' key in %s/%s", id.Namespace, id.Name)
 	}
