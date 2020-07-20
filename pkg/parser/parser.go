@@ -10,6 +10,7 @@ import (
 	"sigs.k8s.io/kustomize/pkg/target"
 
 	"github.com/rhd-gitops-examples/gitops-backend/pkg/gitfs"
+	"github.com/rhd-gitops-examples/gitops-backend/pkg/resource"
 )
 
 const (
@@ -17,18 +18,9 @@ const (
 	appLabel     = "app.kubernetes.io/part-of"
 )
 
-// Resource is the basic metadata for a Kubernetes manifest.
-type Resource struct {
-	Group     string `json:"group"`
-	Version   string `json:"version"`
-	Kind      string `json:"kind"`
-	Name      string `json:"name"`
-	Namespace string `json:"namespace"`
-}
-
 // ParseFromGit takes a go-git CloneOptions struct and a filepath, and extracts
 // the service configuration from there.
-func ParseFromGit(path string, opts *git.CloneOptions) ([]*Resource, error) {
+func ParseFromGit(path string, opts *git.CloneOptions) ([]*resource.Resource, error) {
 	gfs, err := gitfs.NewInMemoryFromOptions(opts)
 	if err != nil {
 		return nil, err
@@ -36,7 +28,7 @@ func ParseFromGit(path string, opts *git.CloneOptions) ([]*Resource, error) {
 	return parseConfig(path, gfs)
 }
 
-func parseConfig(path string, files fs.FileSystem) ([]*Resource, error) {
+func parseConfig(path string, files fs.FileSystem) ([]*resource.Resource, error) {
 	k8sfactory := k8sdeps.NewFactory()
 	ldr, err := loader.NewLoader(path, files)
 	if err != nil {
@@ -60,16 +52,16 @@ func parseConfig(path string, files fs.FileSystem) ([]*Resource, error) {
 		return nil, nil
 	}
 
-	resources := []*Resource{}
+	resources := []*resource.Resource{}
 	for k, v := range r {
 		resources = append(resources, extractResource(k.Gvk(), v.Map()))
 	}
 	return resources, nil
 }
 
-func extractResource(g gvk.Gvk, v map[string]interface{}) *Resource {
+func extractResource(g gvk.Gvk, v map[string]interface{}) *resource.Resource {
 	meta := v["metadata"].(map[string]interface{})
-	return &Resource{
+	return &resource.Resource{
 		Name:      mapString("name", meta),
 		Namespace: mapString("namespace", meta),
 		Group:     g.Group,

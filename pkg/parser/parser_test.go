@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-git/go-git/v5"
 	"github.com/google/go-cmp/cmp"
+	"github.com/rhd-gitops-examples/gitops-backend/pkg/resource"
 	"sigs.k8s.io/kustomize/pkg/gvk"
 )
 
@@ -37,7 +38,7 @@ func TestParseFromGit(t *testing.T) {
 	}
 	sort.SliceStable(res, func(i, j int) bool { return res[i].Name < res[j].Name })
 
-	want := []*Resource{
+	want := []*resource.Resource{
 		{Group: "apps", Version: "v1", Kind: "Deployment", Name: "go-demo-http"},
 		{Version: "v1", Kind: "Service", Name: "go-demo-http"},
 		{Version: "v1", Kind: "ConfigMap", Name: "go-demo-config"},
@@ -63,7 +64,7 @@ func TestExtractResource(t *testing.T) {
 	}
 
 	svc := extractResource(gvk.Gvk{Group: "apps", Version: "v1", Kind: "Deployment"}, redisMap)
-	want := &Resource{
+	want := &resource.Resource{
 		Name:      "redis",
 		Namespace: "test-env",
 		Group:     "apps",
