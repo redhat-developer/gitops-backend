@@ -2,6 +2,7 @@ package parser
 
 import (
 	"sort"
+	"strings"
 	"testing"
 
 	"github.com/go-git/go-git/v5"
@@ -26,6 +27,10 @@ func TestParseNoFile(t *testing.T) {
 	}
 }
 
+func resKey(r *resource.Resource) string {
+	return strings.Join([]string{r.Name, r.Namespace, r.Group, r.Kind, r.Version}, "-")
+}
+
 func TestParseFromGit(t *testing.T) {
 	res, err := ParseFromGit(
 		"pkg/parser/testdata/go-demo",
@@ -36,7 +41,7 @@ func TestParseFromGit(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	sort.SliceStable(res, func(i, j int) bool { return res[i].Name < res[j].Name })
+	sort.SliceStable(res, func(i, j int) bool { return resKey(res[i]) < resKey(res[j]) })
 
 	want := []*resource.Resource{
 		{Group: "apps", Version: "v1", Kind: "Deployment", Name: "go-demo-http"},
@@ -45,7 +50,7 @@ func TestParseFromGit(t *testing.T) {
 		{Version: "v1", Kind: "Service", Name: "redis"},
 		{Group: "apps", Version: "v1", Kind: "Deployment", Name: "redis"},
 	}
-	sort.SliceStable(want, func(i, j int) bool { return want[i].Name < want[j].Name })
+	sort.SliceStable(want, func(i, j int) bool { return resKey(want[i]) < resKey(want[j]) })
 	assertCmp(t, want, res, "failed to match parsed resources")
 }
 
