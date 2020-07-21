@@ -42,3 +42,11 @@ func TestApplicationResources(t *testing.T) {
 		t.Fatalf("ApplicationResources() failed:\n%s", diff)
 	}
 }
+
+// 2020/07/20 18:46:12 Payload = *models.V1alpha1Application
+// 2020/07/20 18:46:12 Name = "guestbook"
+// 2020/07/20 18:46:12        &{Message: Status:Healthy}
+// 2020/07/20 18:46:12 Resources = *models.V1alpha1ResourceStatus &{Group:apps Health:0xc0004b5a80 Hook:false Kind:Deployment Name:guestbook-ui Namespace:default RequiresPruning:false Status:Synced Version:v1}
+// 2020/07/20 18:46:12 Health = *models.V1alpha1HealthStatus &{Message: Status:Healthy}
+// 2020/07/20 18:46:12 Resources = *models.V1alpha1ResourceStatus &{Group: Health:0xc0004b5aa0 Hook:false Kind:Service Name:guestbook-ui Namespace:default RequiresPruning:false Status:Synced Version:v1}
+// 2020/07/20 18:46:12 Health = *models.V1alpha1HealthStatus &{Message: Status:Healthy}
