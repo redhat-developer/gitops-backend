@@ -20,6 +20,8 @@ import (
 const (
 	portFlag     = "port"
 	insecureFlag = "insecure"
+	tlsCertFlag  = "tls-cert"
+	tlsKeyFlag   = "tls-key"
 )
 
 func init() {
@@ -42,8 +44,6 @@ func makeHTTPCmd() *cobra.Command {
 		Short: "provide a simple API for fetching information",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			m := metrics.New("backend", nil)
-			listen := fmt.Sprintf(":%d", viper.GetInt(portFlag))
-			log.Printf("listening on %s", listen)
 
 			http.Handle("/metrics", promhttp.Handler())
 			http.HandleFunc("/health", health.Handler)
@@ -53,7 +53,11 @@ func makeHTTPCmd() *cobra.Command {
 				return err
 			}
 			http.Handle("/", httpapi.AuthenticationMiddleware(router))
-			return http.ListenAndServe(listen, nil)
+
+			listen := fmt.Sprintf(":%d", viper.GetInt(portFlag))
+			log.Printf("listening on %s", listen)
+			log.Printf("Using TLS from %q and %q", viper.GetString(tlsCertFlag), viper.GetString(tlsKeyFlag))
+			return http.ListenAndServeTLS(listen, viper.GetString(tlsCertFlag), viper.GetString(tlsKeyFlag), nil)
 		},
 	}
 
@@ -70,6 +74,20 @@ func makeHTTPCmd() *cobra.Command {
 		"allow insecure TLS requests",
 	)
 	logIfError(viper.BindPFlag(insecureFlag, cmd.Flags().Lookup(insecureFlag)))
+
+	cmd.Flags().String(
+		tlsKeyFlag,
+		"/etc/gitops/ssl/tls.key",
+		"filename for the TLS key",
+	)
+	logIfError(viper.BindPFlag(tlsKeyFlag, cmd.Flags().Lookup(tlsKeyFlag)))
+
+	cmd.Flags().String(
+		tlsCertFlag,
+		"/etc/gitops/ssl/tls.crt",
+		"filename for the TLS certficate",
+	)
+	logIfError(viper.BindPFlag(tlsCertFlag, cmd.Flags().Lookup(tlsCertFlag)))
 	return cmd
 }
 
