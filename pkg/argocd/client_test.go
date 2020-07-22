@@ -19,8 +19,15 @@ func TestApplicationResources(t *testing.T) {
 	payload := &models.V1alpha1Application{
 		Status: &models.V1alpha1ApplicationStatus{
 			Resources: []*models.V1alpha1ResourceStatus{
-				{Group: "apps", Kind: "Deployment", Name: "test-ui", Namespace: "default", Version: "v1"},
-				{Group: "", Kind: "Service", Name: "test-ui", Namespace: "default", Version: "v1"},
+				{
+					Group: "apps", Kind: "Deployment",
+					Name: "test-ui", Namespace: "default", Version: "v1",
+					Health: &models.V1alpha1HealthStatus{Status: "Healthy"}},
+				{
+					Group: "", Kind: "Service",
+					Name: "test-ui", Namespace: "default", Version: "v1",
+					Health: &models.V1alpha1HealthStatus{Status: "Healthy"},
+				},
 			},
 		},
 	}
@@ -35,18 +42,18 @@ func TestApplicationResources(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := []*resource.Resource{
-		{Group: "apps", Version: "v1", Kind: "Deployment", Name: "test-ui", Namespace: "default"},
-		{Group: "", Version: "v1", Kind: "Service", Name: "test-ui", Namespace: "default"},
+		{
+			Group: "apps", Version: "v1", Kind: "Deployment",
+			Name: "test-ui", Namespace: "default",
+			HealthStatus: "Healthy",
+		},
+		{
+			Group: "", Version: "v1", Kind: "Service",
+			Name: "test-ui", Namespace: "default",
+			HealthStatus: "Healthy",
+		},
 	}
 	if diff := cmp.Diff(want, res); diff != "" {
 		t.Fatalf("ApplicationResources() failed:\n%s", diff)
 	}
 }
-
-// 2020/07/20 18:46:12 Payload = *models.V1alpha1Application
-// 2020/07/20 18:46:12 Name = "guestbook"
-// 2020/07/20 18:46:12        &{Message: Status:Healthy}
-// 2020/07/20 18:46:12 Resources = *models.V1alpha1ResourceStatus &{Group:apps Health:0xc0004b5a80 Hook:false Kind:Deployment Name:guestbook-ui Namespace:default RequiresPruning:false Status:Synced Version:v1}
-// 2020/07/20 18:46:12 Health = *models.V1alpha1HealthStatus &{Message: Status:Healthy}
-// 2020/07/20 18:46:12 Resources = *models.V1alpha1ResourceStatus &{Group: Health:0xc0004b5aa0 Hook:false Kind:Service Name:guestbook-ui Namespace:default RequiresPruning:false Status:Synced Version:v1}
-// 2020/07/20 18:46:12 Health = *models.V1alpha1HealthStatus &{Message: Status:Healthy}

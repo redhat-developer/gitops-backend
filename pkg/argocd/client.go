@@ -27,11 +27,12 @@ func (a ArgoCD) ApplicationResources(name string) ([]*resource.Resource, error) 
 
 	for _, v := range res.Payload.Status.Resources {
 		resources = append(resources, &resource.Resource{
-			Group:     v.Group,
-			Version:   v.Version,
-			Kind:      v.Kind,
-			Name:      v.Name,
-			Namespace: v.Namespace,
+			Group:        v.Group,
+			Version:      v.Version,
+			Kind:         v.Kind,
+			Name:         v.Name,
+			Namespace:    v.Namespace,
+			HealthStatus: v.Health.Status,
 		})
 	}
 	return resources, nil
