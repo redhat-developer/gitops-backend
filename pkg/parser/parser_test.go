@@ -55,6 +55,7 @@ func TestParseFromGit(t *testing.T) {
 				nameLabel:   "go-demo",
 				partOfLabel: "go-demo",
 			},
+			Images: []string{"bigkevmcd/go-demo:876ecb3"},
 		},
 		{
 			Version: "v1", Kind: "Service", Name: "go-demo-http",
@@ -82,6 +83,7 @@ func TestParseFromGit(t *testing.T) {
 				nameLabel:   "redis",
 				partOfLabel: "go-demo",
 			},
+			Images: []string{"redis:6-alpine"},
 		},
 	}
 	sort.SliceStable(want, func(i, j int) bool { return resKey(want[i]) < resKey(want[j]) })

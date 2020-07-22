@@ -61,7 +61,7 @@ func parseConfig(path string, files fs.FileSystem) ([]*resource.Resource, error)
 
 func extractResource(g gvk.Gvk, v map[string]interface{}) *resource.Resource {
 	meta := v["metadata"].(map[string]interface{})
-	return &resource.Resource{
+	r := &resource.Resource{
 		Name:      mapString("name", meta),
 		Namespace: mapString("namespace", meta),
 		Group:     g.Group,
@@ -69,6 +69,40 @@ func extractResource(g gvk.Gvk, v map[string]interface{}) *resource.Resource {
 		Kind:      g.Kind,
 		Labels:    mapStringMap("labels", meta),
 	}
+	if g.Kind == "Deployment" {
+		r.Images = extractImages(v)
+	}
+	return r
+}
+
+func extractImages(v map[string]interface{}) []string {
+	images := []string{}
+	spec, ok := v["spec"].(map[string]interface{})
+	if !ok {
+		return images
+	}
+
+	template, ok := spec["template"].(map[string]interface{})
+	if !ok {
+		return images
+	}
+	templateSpec, ok := template["spec"].(map[string]interface{})
+	if !ok {
+		return images
+	}
+	containers, ok := templateSpec["containers"].([]interface{})
+	if !ok {
+		return images
+	}
+
+	for _, v := range containers {
+		container, ok := v.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		images = append(images, mapString("image", container))
+	}
+	return images
 }
 
 func mapString(k string, v map[string]interface{}) string {
