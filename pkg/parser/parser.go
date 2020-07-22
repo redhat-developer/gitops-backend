@@ -67,6 +67,7 @@ func extractResource(g gvk.Gvk, v map[string]interface{}) *resource.Resource {
 		Group:     g.Group,
 		Version:   g.Version,
 		Kind:      g.Kind,
+		Labels:    mapStringMap("labels", meta),
 	}
 }
 
@@ -76,4 +77,16 @@ func mapString(k string, v map[string]interface{}) string {
 		return ""
 	}
 	return s
+}
+
+func mapStringMap(key string, meta map[string]interface{}) map[string]string {
+	s, ok := meta[key].(map[string]interface{})
+	if !ok {
+		return map[string]string{}
+	}
+	items := map[string]string{}
+	for k, v := range s {
+		items[k] = v.(string)
+	}
+	return items
 }

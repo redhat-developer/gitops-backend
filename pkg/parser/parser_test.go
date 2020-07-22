@@ -11,6 +11,11 @@ import (
 	"sigs.k8s.io/kustomize/pkg/gvk"
 )
 
+const (
+	nameLabel   = "app.kubernetes.io/name"
+	partOfLabel = "app.kubernetes.io/part-of"
+)
+
 func TestParseNoFile(t *testing.T) {
 	res, err := ParseFromGit(
 		"testdata",
@@ -44,11 +49,40 @@ func TestParseFromGit(t *testing.T) {
 	sort.SliceStable(res, func(i, j int) bool { return resKey(res[i]) < resKey(res[j]) })
 
 	want := []*resource.Resource{
-		{Group: "apps", Version: "v1", Kind: "Deployment", Name: "go-demo-http"},
-		{Version: "v1", Kind: "Service", Name: "go-demo-http"},
-		{Version: "v1", Kind: "ConfigMap", Name: "go-demo-config"},
-		{Version: "v1", Kind: "Service", Name: "redis"},
-		{Group: "apps", Version: "v1", Kind: "Deployment", Name: "redis"},
+		{
+			Group: "apps", Version: "v1", Kind: "Deployment", Name: "go-demo-http",
+			Labels: map[string]string{
+				nameLabel:   "go-demo",
+				partOfLabel: "go-demo",
+			},
+		},
+		{
+			Version: "v1", Kind: "Service", Name: "go-demo-http",
+			Labels: map[string]string{
+				nameLabel:   "go-demo",
+				partOfLabel: "go-demo",
+			},
+		},
+		{
+			Version: "v1", Kind: "ConfigMap", Name: "go-demo-config",
+			Labels: map[string]string{
+				partOfLabel: "go-demo",
+			},
+		},
+		{
+			Version: "v1", Kind: "Service", Name: "redis",
+			Labels: map[string]string{
+				nameLabel:   "redis",
+				partOfLabel: "go-demo",
+			},
+		},
+		{
+			Group: "apps", Version: "v1", Kind: "Deployment", Name: "redis",
+			Labels: map[string]string{
+				nameLabel:   "redis",
+				partOfLabel: "go-demo",
+			},
+		},
 	}
 	sort.SliceStable(want, func(i, j int) bool { return resKey(want[i]) < resKey(want[j]) })
 	assertCmp(t, want, res, "failed to match parsed resources")
@@ -60,8 +94,8 @@ func TestExtractResource(t *testing.T) {
 		"kind":       "Deployment",
 		"metadata": map[string]interface{}{
 			"labels": map[string]interface{}{
-				"app.kubernetes.io/name":    "redis",
-				"app.kubernetes.io/part-of": "go-demo",
+				nameLabel:   "redis",
+				partOfLabel: "go-demo",
 			},
 			"name":      "redis",
 			"namespace": "test-env",
@@ -75,6 +109,7 @@ func TestExtractResource(t *testing.T) {
 		Group:     "apps",
 		Version:   "v1",
 		Kind:      "Deployment",
+		Labels:    map[string]string{nameLabel: "redis", partOfLabel: "go-demo"},
 	}
 	assertCmp(t, want, svc, "failed to match resource")
 }
