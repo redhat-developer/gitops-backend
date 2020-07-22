@@ -2,6 +2,8 @@ apiVersion: v1
 kind: Service
 metadata:
   name: pipelines-app-delivery-backend
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: pipelines-app-delivery-backend
   labels:
     app.kubernetes.io/name: pipelines-app-delivery-backend
 spec:
