@@ -15,7 +15,7 @@ func TestPipelinesToAppsResponse(t *testing.T) {
 		Apps: []appResponse{
 			{
 				Name: "taxi", RepoURL: "https://example.com/demo/gitops.git",
-				Environments: []string{"tst-dev", "tst-staging"},
+				Environments: []string{"dev"},
 			},
 		},
 	}

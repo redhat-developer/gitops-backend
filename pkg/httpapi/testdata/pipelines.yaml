@@ -2,42 +2,28 @@ config:
   argocd:
     namespace: argocd
   pipelines:
-    name: tst-cicd
+    name: cicd
 environments:
-- name: security
-  cluster: https://security.testing.svc
-  pipelines:
-    integration:
-      bindings:
-      - github-pr-binding
-      template: app-ci-template
-- name: tst-dev
-  cluster: https://dev.testing.svc
+- cluster: https://dev.testing.svc
   apps:
   - name: taxi
     services:
-    - taxi-svc
+    - name: gitops-demo
+      pipelines:
+        integration:
+          bindings:
+          - dev-app-gitops-demo-gitops-demo-binding
+          - github-push-binding
+      source_url: https://example.com/demo/gitops-demo.git
+      webhook:
+        secret:
+          name: webhook-secret-dev-gitops-demo
+          namespace: cicd
+  name: dev
   pipelines:
     integration:
       bindings:
-      - github-pr-binding
+      - github-push-binding
       template: app-ci-template
-  services:
-  - name: taxi-svc
-    pipelines:
-      integration:
-        bindings:
-        - tst-dev-taxi-svc-binding
-        - github-pr-binding
-    source_url: https://example.com/demo/taxi.git
-    webhook:
-      secret:
-        name: webhook-secret-tst-dev-taxi-svc
-        namespace: tst-cicd
-- name: tst-staging
-  cluster: https://staging.testing.svc
-  apps:
-  - name: taxi
-    services:
-    - taxi-svc
+- name: stage
 gitops_url: https://example.com/demo/gitops.git

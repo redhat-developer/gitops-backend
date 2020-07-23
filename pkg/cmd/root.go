@@ -22,6 +22,7 @@ const (
 	insecureFlag = "insecure"
 	tlsCertFlag  = "tls-cert"
 	tlsKeyFlag   = "tls-key"
+	noTLSFlag    = "no-tls"
 )
 
 func init() {
@@ -88,6 +89,13 @@ func makeHTTPCmd() *cobra.Command {
 		"filename for the TLS certficate",
 	)
 	logIfError(viper.BindPFlag(tlsCertFlag, cmd.Flags().Lookup(tlsCertFlag)))
+
+	cmd.Flags().Bool(
+		noTLSFlag,
+		false,
+		"do not attempt to read TLS certificates",
+	)
+	logIfError(viper.BindPFlag(noTLSFlag, cmd.Flags().Lookup(noTLSFlag)))
 	return cmd
 }
 

@@ -42,7 +42,7 @@ func TestGetPipelines(t *testing.T) {
 			map[string]interface{}{
 				"name":         "taxi",
 				"repo_url":     "https://example.com/demo/gitops.git",
-				"environments": []interface{}{"tst-dev", "tst-staging"},
+				"environments": []interface{}{"dev"},
 			},
 		},
 	})
@@ -64,7 +64,7 @@ func TestGetPipelinesWithASpecificRef(t *testing.T) {
 			map[string]interface{}{
 				"name":         "taxi",
 				"repo_url":     "https://example.com/demo/gitops.git",
-				"environments": []interface{}{"tst-dev", "tst-staging"},
+				"environments": []interface{}{"dev"},
 			},
 		},
 	})
@@ -135,7 +135,7 @@ func TestGetPipelinesWithNamespaceAndNameInURL(t *testing.T) {
 			map[string]interface{}{
 				"name":         "taxi",
 				"repo_url":     "https://example.com/demo/gitops.git",
-				"environments": []interface{}{"tst-dev", "tst-staging"},
+				"environments": []interface{}{"dev"},
 			},
 		},
 	})
@@ -176,24 +176,16 @@ func TestGetPipelineApplication(t *testing.T) {
 	options := url.Values{
 		"url": []string{pipelinesURL},
 	}
-	req := makeClientRequest(t, "Bearer testing", fmt.Sprintf("%s/application/%s/%s?%s", ts.URL, "taxi", "tst-dev", options.Encode()))
+	req := makeClientRequest(t, "Bearer testing", fmt.Sprintf("%s/application/%s/%s?%s", ts.URL, "taxi", "dev", options.Encode()))
 	res, err := ts.Client().Do(req)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	assertJSONResponse(t, res, map[string]interface{}{
-		"environment": "tst-dev",
+		"environment": "dev",
 		"cluster":     "https://dev.testing.svc",
-		"resources": []interface{}{
-			map[string]interface{}{
-				"group":     "",
-				"kind":      "Deployment",
-				"name":      "test-deployment",
-				"namespace": "test-ns",
-				"version":   "v1",
-			},
-		},
+		"services":    nil,
 	})
 }
 
@@ -215,24 +207,16 @@ func TestGetPipelineApplicationWithRef(t *testing.T) {
 		"url": []string{pipelinesURL},
 		"ref": []string{testRef},
 	}
-	req := makeClientRequest(t, "Bearer testing", fmt.Sprintf("%s/application/%s/%s?%s", ts.URL, "taxi", "tst-dev", options.Encode()))
+	req := makeClientRequest(t, "Bearer testing", fmt.Sprintf("%s/application/%s/%s?%s", ts.URL, "taxi", "dev", options.Encode()))
 	res, err := ts.Client().Do(req)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	assertJSONResponse(t, res, map[string]interface{}{
-		"environment": "tst-dev",
+		"environment": "dev",
 		"cluster":     "https://dev.testing.svc",
-		"resources": []interface{}{
-			map[string]interface{}{
-				"group":     "",
-				"kind":      "Deployment",
-				"name":      "test-deployment",
-				"namespace": "test-ns",
-				"version":   "v1",
-			},
-		},
+		"services":    nil,
 	})
 }
 
