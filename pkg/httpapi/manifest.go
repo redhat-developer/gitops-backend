@@ -22,7 +22,22 @@ type environment struct {
 }
 
 type application struct {
-	Name string `json:"name,omitempty"`
+	Name     string    `json:"name,omitempty"`
+	Services []service `json:"services,omitempty"`
+}
+
+func (a application) findService(n string) *service {
+	for _, v := range a.Services {
+		if v.Name == n {
+			return &v
+		}
+	}
+	return nil
+}
+
+type service struct {
+	Name      string `json:"name"`
+	SourceURL string `json:"source_url"`
 }
 
 func (c *config) findEnvironment(n string) *environment {

@@ -8,12 +8,13 @@ import (
 )
 
 const (
-	nameLabel   = "app.kubernetes.io/name"
 	partOfLabel = "app.kubernetes.io/part-of"
 )
 
+const testSourceURL = "https://example.com/demo/gitops-demo.git"
+
 func TestParseServicesFromResources(t *testing.T) {
-	res := []*resource.Resource{
+	goDemoResources := []*resource.Resource{
 		{
 			Group: "apps", Version: "v1", Kind: "Deployment", Name: "go-demo-http",
 			Labels: map[string]string{
@@ -35,6 +36,9 @@ func TestParseServicesFromResources(t *testing.T) {
 				partOfLabel: "go-demo",
 			},
 		},
+	}
+
+	redisResources := []*resource.Resource{
 		{
 			Version: "v1", Kind: "Service", Name: "redis",
 			Labels: map[string]string{
@@ -51,19 +55,45 @@ func TestParseServicesFromResources(t *testing.T) {
 			Images: []string{"redis:6-alpine"},
 		},
 	}
-
 	env := &environment{
 		Name:    "test-env",
 		Cluster: "https://cluster.local",
 		Apps: []*application{
-			{Name: "my-app"},
+			{
+				Name: "my-app",
+				Services: []service{
+					{
+						Name:      "go-demo",
+						SourceURL: testSourceURL,
+					},
+					{
+						Name: "redis",
+					},
+				},
+			},
 		},
 	}
+	res := append(goDemoResources, redisResources...)
 
 	svcs := parseServicesFromResources(env, res)
-	want := []service{}
+
+	want := []responseService{
+		{
+			Name: "go-demo",
+			Source: source{
+				URL: testSourceURL,
+			},
+			Images:    []string{"bigkevmcd/go-demo:876ecb3"},
+			Resources: goDemoResources,
+		},
+		{
+			Name:      "redis",
+			Source:    source{},
+			Images:    []string{"redis:6-alpine"},
+			Resources: redisResources,
+		},
+	}
 	if diff := cmp.Diff(want, svcs); diff != "" {
 		t.Fatalf("parseServicesFromResources got\n%s", diff)
 	}
-
 }
