@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"sort"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -33,6 +34,7 @@ func TestParseServicesFromResources(t *testing.T) {
 		{
 			Version: "v1", Kind: "ConfigMap", Name: "go-demo-config",
 			Labels: map[string]string{
+				nameLabel:   "go-demo",
 				partOfLabel: "go-demo",
 			},
 		},
@@ -76,6 +78,10 @@ func TestParseServicesFromResources(t *testing.T) {
 	res := append(goDemoResources, redisResources...)
 
 	svcs := parseServicesFromResources(env, res)
+
+	sort.Slice(svcs, func(i, j int) bool {
+		return svcs[i].Name < svcs[j].Name
+	})
 
 	want := []responseService{
 		{

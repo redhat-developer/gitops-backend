@@ -33,6 +33,7 @@ type APIRouter struct {
 	secretGetter     secrets.SecretGetter
 	secretRef        types.NamespacedName
 	resourceParser   parser.ResourceParser
+	driverIdentifier git.DriverIdentifier
 }
 
 // NewRouter creates and returns a new APIRouter.

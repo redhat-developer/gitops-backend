@@ -69,11 +69,15 @@ func parseServicesFromResources(env *environment, res []*resource.Resource) []re
 		if svc != nil {
 			svcRepo = svc.SourceURL
 		}
-		services = append(services, responseService{
+		rs := responseService{
 			Name:      k,
 			Images:    v,
-			Source:    source{URL: svcRepo},
-			Resources: serviceResources[k]})
+			Resources: serviceResources[k],
+		}
+		if svcRepo != "" {
+			rs.Source = source{URL: svcRepo}
+		}
+		services = append(services, rs)
 	}
 
 	return services
@@ -89,7 +93,6 @@ type responseService struct {
 	Name      string               `json:"name"`
 	Source    source               `json:"source,omitempty"`
 	Images    []string             `json:"images,omitempty"`
-	Badge     string               `json:"badge"`
 	Resources []*resource.Resource `json:"resources,omitempty"`
 }
 

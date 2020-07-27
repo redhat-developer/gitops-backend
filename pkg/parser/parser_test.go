@@ -112,6 +112,7 @@ func TestExtractResource(t *testing.T) {
 		Version:   "v1",
 		Kind:      "Deployment",
 		Labels:    map[string]string{nameLabel: "redis", partOfLabel: "go-demo"},
+		Images:    []string{},
 	}
 	assertCmp(t, want, svc, "failed to match resource")
 }

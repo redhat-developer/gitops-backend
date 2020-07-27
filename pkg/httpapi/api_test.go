@@ -185,7 +185,24 @@ func TestGetPipelineApplication(t *testing.T) {
 	assertJSONResponse(t, res, map[string]interface{}{
 		"environment": "dev",
 		"cluster":     "https://dev.testing.svc",
-		"services":    nil,
+		"services": []interface{}{
+			map[string]interface{}{
+				"name": "",
+				"resources": []interface{}{
+					map[string]interface{}{
+						"group":     "",
+						"kind":      "Deployment",
+						"name":      "test-deployment",
+						"namespace": "test-ns",
+						"version":   "v1",
+					},
+				},
+				"source": map[string]interface{}{
+					"type": "",
+					"url":  "",
+				},
+			},
+		},
 	})
 }
 
@@ -216,7 +233,24 @@ func TestGetPipelineApplicationWithRef(t *testing.T) {
 	assertJSONResponse(t, res, map[string]interface{}{
 		"environment": "dev",
 		"cluster":     "https://dev.testing.svc",
-		"services":    nil,
+		"services": []interface{}{
+			map[string]interface{}{
+				"name": "",
+				"resources": []interface{}{
+					map[string]interface{}{
+						"group":     "",
+						"kind":      "Deployment",
+						"name":      "test-deployment",
+						"namespace": "test-ns",
+						"version":   "v1",
+					},
+				},
+				"source": map[string]interface{}{
+					"type": "",
+					"url":  "",
+				},
+			},
+		},
 	})
 }
 
