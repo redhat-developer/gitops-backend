@@ -64,9 +64,15 @@ func parseServicesFromResources(env *environment, res []*resource.Resource) []re
 
 	services := []responseService{}
 	for k, v := range serviceImages {
+		svc := env.findService(k)
+		svcRepo := ""
+		if svc != nil {
+			svcRepo = svc.SourceURL
+		}
 		services = append(services, responseService{
 			Name:      k,
 			Images:    v,
+			Source:    source{URL: svcRepo},
 			Resources: serviceResources[k]})
 	}
 

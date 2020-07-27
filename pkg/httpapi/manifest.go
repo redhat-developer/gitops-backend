@@ -26,10 +26,12 @@ type application struct {
 	Services []service `json:"services,omitempty"`
 }
 
-func (a application) findService(n string) *service {
-	for _, v := range a.Services {
-		if v.Name == n {
-			return &v
+func (e environment) findService(n string) *service {
+	for _, a := range e.Apps {
+		for _, s := range a.Services {
+			if s.Name == n {
+				return &s
+			}
 		}
 	}
 	return nil
