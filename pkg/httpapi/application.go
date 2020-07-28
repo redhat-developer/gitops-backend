@@ -7,7 +7,6 @@ import (
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
-	"github.com/jenkins-x/go-scm/scm/factory"
 	"github.com/rhd-gitops-examples/gitops-backend/pkg/resource"
 )
 
@@ -85,11 +84,7 @@ func parseServicesFromResources(env *environment, res []*resource.Resource) ([]r
 			if err != nil {
 				return nil, err
 			}
-			driver, err := factory.DefaultIdentifier.Identify(domain)
-			if err != nil {
-				return nil, err
-			}
-			rs.Source = source{URL: svcRepo, Type: driver}
+			rs.Source = source{URL: svcRepo, Type: domain}
 		}
 		services = append(services, rs)
 	}

@@ -91,7 +91,7 @@ func TestParseServicesFromResources(t *testing.T) {
 			Name: "go-demo",
 			Source: source{
 				URL:  testSourceURL,
-				Type: "github",
+				Type: "github.com",
 			},
 			Images:    []string{"bigkevmcd/go-demo:876ecb3"},
 			Resources: goDemoResources,
