@@ -2,10 +2,12 @@ package httpapi
 
 import (
 	"fmt"
+	"net/url"
 	"path"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
+	"github.com/jenkins-x/go-scm/scm/factory"
 	"github.com/rhd-gitops-examples/gitops-backend/pkg/resource"
 )
 
@@ -29,10 +31,14 @@ func (a *APIRouter) applicationEnvironment(authToken string, c *config, appName,
 	if err != nil {
 		return nil, err
 	}
+	services, err := parseServicesFromResources(env, res)
+	if err != nil {
+		return nil, err
+	}
 	appEnv := map[string]interface{}{
 		"environment": envName,
 		"cluster":     c.findEnvironment(envName).Cluster,
-		"services":    parseServicesFromResources(env, res),
+		"services":    services,
 	}
 	return appEnv, nil
 }
@@ -41,7 +47,7 @@ func pathForApplication(appName, envName string) string {
 	return path.Join("environments", envName, "apps", appName)
 }
 
-func parseServicesFromResources(env *environment, res []*resource.Resource) []responseService {
+func parseServicesFromResources(env *environment, res []*resource.Resource) ([]responseService, error) {
 	serviceImages := map[string][]string{}
 	serviceResources := map[string][]*resource.Resource{}
 	for _, v := range res {
@@ -75,12 +81,19 @@ func parseServicesFromResources(env *environment, res []*resource.Resource) []re
 			Resources: serviceResources[k],
 		}
 		if svcRepo != "" {
-			rs.Source = source{URL: svcRepo}
+			domain, err := hostFromURL(svcRepo)
+			if err != nil {
+				return nil, err
+			}
+			driver, err := factory.DefaultIdentifier.Identify(domain)
+			if err != nil {
+				return nil, err
+			}
+			rs.Source = source{URL: svcRepo, Type: driver}
 		}
 		services = append(services, rs)
 	}
-
-	return services
+	return services, nil
 }
 
 const nameLabel = "app.kubernetes.io/name"
@@ -99,4 +112,12 @@ type responseService struct {
 type source struct {
 	URL  string `json:"url"`
 	Type string `json:"type"`
+}
+
+func hostFromURL(u string) (string, error) {
+	parsed, err := url.Parse(u)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse Git repo URL %q: %w", u, err)
+	}
+	return parsed.Host, nil
 }

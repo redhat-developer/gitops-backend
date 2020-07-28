@@ -12,7 +12,7 @@ const (
 	partOfLabel = "app.kubernetes.io/part-of"
 )
 
-const testSourceURL = "https://example.com/demo/gitops-demo.git"
+const testSourceURL = "https://github.com/rhd-example-gitops/gitops-demo.git"
 
 func TestParseServicesFromResources(t *testing.T) {
 	goDemoResources := []*resource.Resource{
@@ -77,7 +77,10 @@ func TestParseServicesFromResources(t *testing.T) {
 	}
 	res := append(goDemoResources, redisResources...)
 
-	svcs := parseServicesFromResources(env, res)
+	svcs, err := parseServicesFromResources(env, res)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	sort.Slice(svcs, func(i, j int) bool {
 		return svcs[i].Name < svcs[j].Name
@@ -87,7 +90,8 @@ func TestParseServicesFromResources(t *testing.T) {
 		{
 			Name: "go-demo",
 			Source: source{
-				URL: testSourceURL,
+				URL:  testSourceURL,
+				Type: "github",
 			},
 			Images:    []string{"bigkevmcd/go-demo:876ecb3"},
 			Resources: goDemoResources,
