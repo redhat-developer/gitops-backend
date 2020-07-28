@@ -176,7 +176,8 @@ func TestGetPipelineApplication(t *testing.T) {
 	options := url.Values{
 		"url": []string{pipelinesURL},
 	}
-	req := makeClientRequest(t, "Bearer testing", fmt.Sprintf("%s/application/%s/%s?%s", ts.URL, "taxi", "dev", options.Encode()))
+	req := makeClientRequest(t, "Bearer testing",
+		fmt.Sprintf("%s/environments/%s/application/%s?%s", ts.URL, "dev", "taxi", options.Encode()))
 	res, err := ts.Client().Do(req)
 	if err != nil {
 		t.Fatal(err)
@@ -224,7 +225,8 @@ func TestGetPipelineApplicationWithRef(t *testing.T) {
 		"url": []string{pipelinesURL},
 		"ref": []string{testRef},
 	}
-	req := makeClientRequest(t, "Bearer testing", fmt.Sprintf("%s/application/%s/%s?%s", ts.URL, "taxi", "dev", options.Encode()))
+	req := makeClientRequest(t, "Bearer testing",
+		fmt.Sprintf("%s/environments/%s/application/%s?%s", ts.URL, "dev", "taxi", options.Encode()))
 	res, err := ts.Client().Do(req)
 	if err != nil {
 		t.Fatal(err)

@@ -12,7 +12,7 @@ import (
 )
 
 // TODO: if the environment doesn't exist, this should return a not found error.
-func (a *APIRouter) applicationEnvironment(authToken string, c *config, appName, envName string) (map[string]interface{}, error) {
+func (a *APIRouter) environmentApplication(authToken string, c *config, envName, appName string) (map[string]interface{}, error) {
 	if c.GitOpsURL == "" {
 		return nil, nil
 	}

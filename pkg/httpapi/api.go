@@ -46,7 +46,7 @@ func NewRouter(c git.ClientFactory, s secrets.SecretGetter) *APIRouter {
 		resourceParser:   parser.ParseFromGit,
 	}
 	api.HandlerFunc(http.MethodGet, "/pipelines", api.GetPipelines)
-	api.HandlerFunc(http.MethodGet, "/application/:name/:env", api.GetApplication)
+	api.HandlerFunc(http.MethodGet, "/environments/:env/application/:app", api.GetApplication)
 	return api
 }
 
@@ -102,7 +102,9 @@ func (a *APIRouter) GetPipelines(w http.ResponseWriter, r *http.Request) {
 	marshalResponse(w, pipelinesToAppsResponse(pipelines))
 }
 
-// GetPipelines fetches the environments for a specific application.
+// GetApplication fetches an application within a specific environment.
+//
+// Expects the
 func (a *APIRouter) GetApplication(w http.ResponseWriter, r *http.Request) {
 	urlToFetch := r.URL.Query().Get("url")
 	if urlToFetch == "" {
@@ -151,7 +153,7 @@ func (a *APIRouter) GetApplication(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	params := httprouter.ParamsFromContext(r.Context())
-	appEnvironments, err := a.applicationEnvironment(token, pipelines, params.ByName("name"), params.ByName("env"))
+	appEnvironments, err := a.environmentApplication(token, pipelines, params.ByName("env"), params.ByName("app"))
 	if err != nil {
 		log.Printf("ERROR: failed to get application data: %s", err)
 		http.Error(w, "failed to extract data", http.StatusBadRequest)
