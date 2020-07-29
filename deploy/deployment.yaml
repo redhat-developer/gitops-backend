@@ -17,7 +17,7 @@ spec:
       serviceAccountName: pipelines-app-delivery
       containers:
         - name: pipelines-app-delivery-http
-          image: quay.io/redhat-developer/gitops-backend:v0.0.3
+          image: quay.io/kmcdermo/gitops-backend:v0.0.4
           imagePullPolicy: Always
           env:
           - name: INSECURE
