@@ -166,6 +166,9 @@ func TestGetPipelineApplication(t *testing.T) {
 		Kind:      "Deployment",
 		Name:      "test-deployment",
 		Namespace: "test-ns",
+		Labels: map[string]string{
+			nameLabel: "gitops-demo",
+		},
 	}
 
 	ts, c := makeServer(t, func(a *APIRouter) {
@@ -188,7 +191,7 @@ func TestGetPipelineApplication(t *testing.T) {
 		"cluster":     "https://dev.testing.svc",
 		"services": []interface{}{
 			map[string]interface{}{
-				"name": "",
+				"name": "gitops-demo",
 				"resources": []interface{}{
 					map[string]interface{}{
 						"group":     "",
@@ -199,8 +202,8 @@ func TestGetPipelineApplication(t *testing.T) {
 					},
 				},
 				"source": map[string]interface{}{
-					"type": "",
-					"url":  "",
+					"type": "example.com",
+					"url":  "https://example.com/demo/gitops-demo.git",
 				},
 			},
 		},
@@ -214,6 +217,9 @@ func TestGetPipelineApplicationWithRef(t *testing.T) {
 		Kind:      "Deployment",
 		Name:      "test-deployment",
 		Namespace: "test-ns",
+		Labels: map[string]string{
+			nameLabel: "gitops-demo",
+		},
 	}
 
 	ts, c := makeServer(t, func(a *APIRouter) {
@@ -237,7 +243,7 @@ func TestGetPipelineApplicationWithRef(t *testing.T) {
 		"cluster":     "https://dev.testing.svc",
 		"services": []interface{}{
 			map[string]interface{}{
-				"name": "",
+				"name": "gitops-demo",
 				"resources": []interface{}{
 					map[string]interface{}{
 						"group":     "",
@@ -248,8 +254,8 @@ func TestGetPipelineApplicationWithRef(t *testing.T) {
 					},
 				},
 				"source": map[string]interface{}{
-					"type": "",
-					"url":  "",
+					"type": "example.com",
+					"url":  "https://example.com/demo/gitops-demo.git",
 				},
 			},
 		},
@@ -367,6 +373,7 @@ func assertJSONResponse(t *testing.T, res *http.Response, want map[string]interf
 		t.Fatalf("wanted '*' got %s", h)
 	}
 	got := map[string]interface{}{}
+
 	err = json.Unmarshal(b, &got)
 	if err != nil {
 		t.Fatalf("failed to parse %s: %s", b, err)
