@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/url"
 	"path"
+	"sort"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
@@ -47,18 +48,18 @@ func pathForApplication(appName, envName string) string {
 }
 
 func parseServicesFromResources(env *environment, res []*resource.Resource) ([]responseService, error) {
-	serviceImages := map[string][]string{}
+	serviceImages := map[string]map[string]bool{}
 	serviceResources := map[string][]*resource.Resource{}
 	for _, v := range res {
 		name := serviceFromLabels(v.Labels)
-
 		images, ok := serviceImages[name]
 		if !ok {
-			images = []string{}
+			images = map[string]bool{}
 		}
-		images = append(images, v.Images...)
+		for _, n := range v.Images {
+			images[n] = true
+		}
 		serviceImages[name] = images
-
 		resources, ok := serviceResources[name]
 		if !ok {
 			resources = []*resource.Resource{}
@@ -76,7 +77,7 @@ func parseServicesFromResources(env *environment, res []*resource.Resource) ([]r
 		}
 		rs := responseService{
 			Name:      k,
-			Images:    v,
+			Images:    keys(v),
 			Resources: serviceResources[k],
 		}
 		if svcRepo != "" {
@@ -115,4 +116,13 @@ func hostFromURL(u string) (string, error) {
 		return "", fmt.Errorf("failed to parse Git repo URL %q: %w", u, err)
 	}
 	return parsed.Host, nil
+}
+
+func keys(v map[string]bool) []string {
+	keys := []string{}
+	for k := range v {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
 }

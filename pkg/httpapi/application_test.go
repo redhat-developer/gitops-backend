@@ -107,3 +107,66 @@ func TestParseServicesFromResources(t *testing.T) {
 		t.Fatalf("parseServicesFromResources got\n%s", diff)
 	}
 }
+
+func TestParseServicesFromResourcesReturnsSetOfImages(t *testing.T) {
+	res := []*resource.Resource{
+		{
+			Group: "apps", Version: "v1", Kind: "Deployment", Name: "go-demo-http",
+			Labels: map[string]string{
+				nameLabel:   "go-demo",
+				partOfLabel: "go-demo",
+			},
+			Images: []string{"bigkevmcd/go-demo:876ecb3"},
+		},
+		{
+			Group: "apps", Version: "v1", Kind: "Deployment", Name: "go-demo-cmd",
+			Labels: map[string]string{
+				nameLabel:   "go-demo",
+				partOfLabel: "go-demo",
+			},
+			Images: []string{"bigkevmcd/testing:a29fcef", "bigkevmcd/go-demo:876ecb3"},
+		},
+	}
+	env := &environment{
+		Name:    "test-env",
+		Cluster: "https://cluster.local",
+		Apps: []*application{
+			{
+				Name: "my-app",
+				Services: []service{
+					{
+						Name:      "go-demo",
+						SourceURL: testSourceURL,
+					},
+				},
+			},
+		},
+	}
+
+	svcs, err := parseServicesFromResources(env, res)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	sort.Slice(svcs, func(i, j int) bool {
+		return svcs[i].Name < svcs[j].Name
+	})
+
+	want := []responseService{
+		{
+			Name: "go-demo",
+			Source: source{
+				URL:  testSourceURL,
+				Type: "github.com",
+			},
+			Images: []string{
+				"bigkevmcd/go-demo:876ecb3",
+				"bigkevmcd/testing:a29fcef",
+			},
+			Resources: res,
+		},
+	}
+	if diff := cmp.Diff(want, svcs); diff != "" {
+		t.Fatalf("parseServicesFromResources got\n%s", diff)
+	}
+}
