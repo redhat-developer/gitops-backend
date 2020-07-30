@@ -1,4 +1,4 @@
-module github.com/rhd-gitops-examples/gitops-backend
+module github.com/rhd-gitops-example/gitops-backend
 
 go 1.14
 

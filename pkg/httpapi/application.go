@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
-	"github.com/rhd-gitops-examples/gitops-backend/pkg/resource"
+	"github.com/rhd-gitops-example/gitops-backend/pkg/resource"
 )
 
 // TODO: if the environment doesn't exist, this should return a not found error.

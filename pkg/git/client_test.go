@@ -10,8 +10,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/jenkins-x/go-scm/scm/factory"
 
-	"github.com/rhd-gitops-examples/gitops-backend/pkg/metrics"
-	"github.com/rhd-gitops-examples/gitops-backend/test"
+	"github.com/rhd-gitops-example/gitops-backend/pkg/metrics"
+	"github.com/rhd-gitops-example/gitops-backend/test"
 )
 
 func TestFileContents(t *testing.T) {
