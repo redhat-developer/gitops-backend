@@ -70,12 +70,12 @@ func extractResource(g gvk.Gvk, v map[string]interface{}) *resource.Resource {
 		Labels:    mapStringMap("labels", meta),
 	}
 	if g.Kind == "Deployment" {
-		r.Images = extractImages(v)
+		r.Images = extractImagesFromDeployment(v)
 	}
 	return r
 }
 
-func extractImages(v map[string]interface{}) []string {
+func extractImagesFromDeployment(v map[string]interface{}) []string {
 	images := []string{}
 	spec, ok := v["spec"].(map[string]interface{})
 	if !ok {
