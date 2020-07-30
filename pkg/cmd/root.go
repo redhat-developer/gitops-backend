@@ -123,7 +123,7 @@ func makeAPIRouter(m metrics.Interface) (*httpapi.APIRouter, error) {
 	if err != nil {
 		return nil, err
 	}
-	cf := git.NewClientFactory(git.NewDriverIdentifier(), m)
+	cf := git.NewClientFactory(m)
 	secretGetter := secrets.NewFromConfig(
 		&rest.Config{Host: config.Host},
 		viper.GetBool(insecureFlag))
