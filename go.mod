@@ -13,7 +13,7 @@ require (
 	github.com/google/go-cmp v0.4.1
 	github.com/google/gofuzz v1.1.0 // indirect
 	github.com/googleapis/gnostic v0.4.0 // indirect
-	github.com/jenkins-x/go-scm v1.5.142
+	github.com/jenkins-x/go-scm v1.5.151
 	github.com/json-iterator/go v1.1.9 // indirect
 	github.com/julienschmidt/httprouter v1.2.0
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect

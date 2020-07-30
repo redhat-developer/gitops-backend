@@ -11,12 +11,6 @@ type ClientFactory interface {
 	Create(url, token string) (SCM, error)
 }
 
-// DriverIdentifer parses a URL and attempts to determine which go-scm driver to
-// use to talk to the server.
-type DriverIdentifier interface {
-	Identify(url string) (string, error)
-}
-
 // SCM is a wrapper around go-scm's Client implementation.
 type SCM interface {
 	// FileContents returns the contents of a file within a repo.
