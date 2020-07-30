@@ -3,7 +3,7 @@ package git
 import (
 	"testing"
 
-	"github.com/rhd-gitops-examples/gitops-backend/test"
+	"github.com/rhd-gitops-example/gitops-backend/test"
 )
 
 var _ DriverIdentifier = (*URLDriverIdentifier)(nil)

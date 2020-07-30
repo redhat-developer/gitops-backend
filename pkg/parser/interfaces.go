@@ -2,7 +2,7 @@ package parser
 
 import (
 	"github.com/go-git/go-git/v5"
-	"github.com/rhd-gitops-examples/gitops-backend/pkg/resource"
+	"github.com/rhd-gitops-example/gitops-backend/pkg/resource"
 )
 
 // ResourceParser implementations should fetch the source using the CloneOptions and

@@ -9,8 +9,8 @@ import (
 	"sigs.k8s.io/kustomize/pkg/loader"
 	"sigs.k8s.io/kustomize/pkg/target"
 
-	"github.com/rhd-gitops-examples/gitops-backend/pkg/gitfs"
-	"github.com/rhd-gitops-examples/gitops-backend/pkg/resource"
+	"github.com/rhd-gitops-example/gitops-backend/pkg/gitfs"
+	"github.com/rhd-gitops-example/gitops-backend/pkg/resource"
 )
 
 const (

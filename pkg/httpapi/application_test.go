@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/rhd-gitops-examples/gitops-backend/pkg/resource"
+	"github.com/rhd-gitops-example/gitops-backend/pkg/resource"
 )
 
 const (

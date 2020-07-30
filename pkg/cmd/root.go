@@ -10,11 +10,11 @@ import (
 	"k8s.io/client-go/rest"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/rhd-gitops-examples/gitops-backend/pkg/git"
-	"github.com/rhd-gitops-examples/gitops-backend/pkg/health"
-	"github.com/rhd-gitops-examples/gitops-backend/pkg/httpapi"
-	"github.com/rhd-gitops-examples/gitops-backend/pkg/httpapi/secrets"
-	"github.com/rhd-gitops-examples/gitops-backend/pkg/metrics"
+	"github.com/rhd-gitops-example/gitops-backend/pkg/git"
+	"github.com/rhd-gitops-example/gitops-backend/pkg/health"
+	"github.com/rhd-gitops-example/gitops-backend/pkg/httpapi"
+	"github.com/rhd-gitops-example/gitops-backend/pkg/httpapi/secrets"
+	"github.com/rhd-gitops-example/gitops-backend/pkg/metrics"
 )
 
 const (

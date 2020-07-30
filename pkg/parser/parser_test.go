@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-git/go-git/v5"
 	"github.com/google/go-cmp/cmp"
-	"github.com/rhd-gitops-examples/gitops-backend/pkg/resource"
+	"github.com/rhd-gitops-example/gitops-backend/pkg/resource"
 	"sigs.k8s.io/kustomize/pkg/gvk"
 )
 
