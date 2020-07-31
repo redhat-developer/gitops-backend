@@ -1,7 +1,8 @@
 package parser
 
-// eployments, deploymentconfigs, statefulsets, daemonsets, jobs, cronjobs
 import (
+	"sort"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -13,7 +14,7 @@ func extractImages(conv *UnstructuredConverter, g gvk.Gvk, v *unstructured.Unstr
 	if err != nil {
 		return nil
 	}
-
+	// Deployments, DeploymentConfigs, StatefulSets, DaemonSets, Jobs, CronJobs
 	switch k := d.(type) {
 	case *appsv1.Deployment:
 		return extractImagesFromDeployment(k)
@@ -27,6 +28,9 @@ func extractImagesFromDeployment(d *appsv1.Deployment) []string {
 
 func extractImagesFromPodTemplateSpec(p corev1.PodTemplateSpec) []string {
 	images := stringSet{}
+	for _, c := range p.Spec.InitContainers {
+		images.add(c.Image)
+	}
 	for _, c := range p.Spec.Containers {
 		images.add(c.Image)
 	}
@@ -44,5 +48,6 @@ func (s stringSet) elements() []string {
 	for k := range s {
 		e = append(e, k)
 	}
+	sort.Strings(e)
 	return e
 }
