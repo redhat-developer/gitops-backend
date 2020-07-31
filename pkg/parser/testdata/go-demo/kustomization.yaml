@@ -7,3 +7,4 @@ resources:
 - redis_service.yaml
 - redis_deployment.yaml
 - job.yaml
+- cron_job.yaml
