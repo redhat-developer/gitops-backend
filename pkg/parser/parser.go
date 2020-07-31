@@ -3,14 +3,15 @@ package parser
 import (
 	"github.com/go-git/go-git/v5"
 
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/kustomize/k8sdeps"
 	"sigs.k8s.io/kustomize/pkg/fs"
 	"sigs.k8s.io/kustomize/pkg/gvk"
 	"sigs.k8s.io/kustomize/pkg/loader"
+	"sigs.k8s.io/kustomize/pkg/resource"
 	"sigs.k8s.io/kustomize/pkg/target"
 
 	"github.com/rhd-gitops-example/gitops-backend/pkg/gitfs"
-	"github.com/rhd-gitops-example/gitops-backend/pkg/resource"
 )
 
 const (
@@ -20,7 +21,7 @@ const (
 
 // ParseFromGit takes a go-git CloneOptions struct and a filepath, and extracts
 // the service configuration from there.
-func ParseFromGit(path string, opts *git.CloneOptions) ([]*resource.Resource, error) {
+func ParseFromGit(path string, opts *git.CloneOptions) ([]*Resource, error) {
 	gfs, err := gitfs.NewInMemoryFromOptions(opts)
 	if err != nil {
 		return nil, err
@@ -28,7 +29,7 @@ func ParseFromGit(path string, opts *git.CloneOptions) ([]*resource.Resource, er
 	return parseConfig(path, gfs)
 }
 
-func parseConfig(path string, files fs.FileSystem) ([]*resource.Resource, error) {
+func parseConfig(path string, files fs.FileSystem) ([]*Resource, error) {
 	k8sfactory := k8sdeps.NewFactory()
 	ldr, err := loader.NewLoader(path, files)
 	if err != nil {
@@ -52,16 +53,21 @@ func parseConfig(path string, files fs.FileSystem) ([]*resource.Resource, error)
 		return nil, nil
 	}
 
-	resources := []*resource.Resource{}
+	conv, err := NewUnstructuredConverter()
+	if err != nil {
+		return nil, err
+	}
+	resources := []*Resource{}
 	for k, v := range r {
-		resources = append(resources, extractResource(k.Gvk(), v.Map()))
+		resources = append(resources, extractResource(conv, k.Gvk(), v))
 	}
 	return resources, nil
 }
 
-func extractResource(g gvk.Gvk, v map[string]interface{}) *resource.Resource {
-	meta := v["metadata"].(map[string]interface{})
-	r := &resource.Resource{
+func extractResource(conv *UnstructuredConverter, g gvk.Gvk, v *resource.Resource) *Resource {
+	m := v.Map()
+	meta := m["metadata"].(map[string]interface{})
+	r := &Resource{
 		Name:      mapString("name", meta),
 		Namespace: mapString("namespace", meta),
 		Group:     g.Group,
@@ -69,42 +75,11 @@ func extractResource(g gvk.Gvk, v map[string]interface{}) *resource.Resource {
 		Kind:      g.Kind,
 		Labels:    mapStringMap("labels", meta),
 	}
-	if g.Kind == "Deployment" {
-		r.Images = extractImagesFromDeployment(v)
-	}
+	r.Images = extractImages(conv, g, convert(v))
 	return r
 }
 
-func extractImagesFromDeployment(v map[string]interface{}) []string {
-	images := []string{}
-	spec, ok := v["spec"].(map[string]interface{})
-	if !ok {
-		return images
-	}
-
-	template, ok := spec["template"].(map[string]interface{})
-	if !ok {
-		return images
-	}
-	templateSpec, ok := template["spec"].(map[string]interface{})
-	if !ok {
-		return images
-	}
-	containers, ok := templateSpec["containers"].([]interface{})
-	if !ok {
-		return images
-	}
-
-	for _, v := range containers {
-		container, ok := v.(map[string]interface{})
-		if !ok {
-			continue
-		}
-		images = append(images, mapString("image", container))
-	}
-	return images
-}
-
+// TODO: These should be extracted from the parsed resource.
 func mapString(k string, v map[string]interface{}) string {
 	s, ok := v[k].(string)
 	if !ok {
@@ -123,4 +98,12 @@ func mapStringMap(key string, meta map[string]interface{}) map[string]string {
 		items[k] = v.(string)
 	}
 	return items
+}
+
+// convert converts a Kustomize resource into a generic Unstructured resource
+// which the gitops engine Sync needs.
+func convert(r *resource.Resource) *unstructured.Unstructured {
+	return &unstructured.Unstructured{
+		Object: r.Map(),
+	}
 }

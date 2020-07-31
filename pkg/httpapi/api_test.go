@@ -16,7 +16,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/rhd-gitops-example/gitops-backend/pkg/git"
 	"github.com/rhd-gitops-example/gitops-backend/pkg/parser"
-	"github.com/rhd-gitops-example/gitops-backend/pkg/resource"
 	"github.com/rhd-gitops-example/gitops-backend/test"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/yaml"
@@ -160,7 +159,7 @@ func TestGetPipelinesWithUnknownSecret(t *testing.T) {
 }
 
 func TestGetPipelineApplication(t *testing.T) {
-	testResource := &resource.Resource{
+	testResource := &parser.Resource{
 		Group:     "",
 		Version:   "v1",
 		Kind:      "Deployment",
@@ -211,7 +210,7 @@ func TestGetPipelineApplication(t *testing.T) {
 }
 
 func TestGetPipelineApplicationWithRef(t *testing.T) {
-	testResource := &resource.Resource{
+	testResource := &parser.Resource{
 		Group:     "",
 		Version:   "v1",
 		Kind:      "Deployment",
@@ -426,8 +425,8 @@ func (s stubClientFactory) Create(url, token string) (git.SCM, error) {
 	return s.client, nil
 }
 
-func stubResourceParser(r ...*resource.Resource) parser.ResourceParser {
-	return func(path string, opts *gogit.CloneOptions) ([]*resource.Resource, error) {
+func stubResourceParser(r ...*parser.Resource) parser.ResourceParser {
+	return func(path string, opts *gogit.CloneOptions) ([]*parser.Resource, error) {
 		return r, nil
 	}
 }

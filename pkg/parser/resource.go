@@ -1,4 +1,4 @@
-package resource
+package parser
 
 // Object a basic object for a Kubernetes object.
 type Resource struct {
