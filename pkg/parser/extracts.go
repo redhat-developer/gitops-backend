@@ -4,6 +4,8 @@ import (
 	"sort"
 
 	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
+	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/kustomize/pkg/gvk"
@@ -17,13 +19,17 @@ func extractImages(conv *UnstructuredConverter, g gvk.Gvk, v *unstructured.Unstr
 	// Deployments, DeploymentConfigs, StatefulSets, DaemonSets, Jobs, CronJobs
 	switch k := d.(type) {
 	case *appsv1.Deployment:
-		return extractImagesFromDeployment(k)
+		return extractImagesFromPodTemplateSpec(k.Spec.Template)
+	case *appsv1.StatefulSet:
+		return extractImagesFromPodTemplateSpec(k.Spec.Template)
+	case *appsv1.DaemonSet:
+		return extractImagesFromPodTemplateSpec(k.Spec.Template)
+	case *batchv1.Job:
+		return extractImagesFromPodTemplateSpec(k.Spec.Template)
+	case *batchv1beta1.CronJob:
+		return extractImagesFromPodTemplateSpec(k.Spec.JobTemplate.Spec.Template)
 	}
 	return nil
-}
-
-func extractImagesFromDeployment(d *appsv1.Deployment) []string {
-	return extractImagesFromPodTemplateSpec(d.Spec.Template)
 }
 
 func extractImagesFromPodTemplateSpec(p corev1.PodTemplateSpec) []string {
