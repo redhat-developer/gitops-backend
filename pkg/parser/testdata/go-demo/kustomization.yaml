@@ -8,3 +8,4 @@ resources:
 - redis_deployment.yaml
 - job.yaml
 - cron_job.yaml
+- stateful_set.yaml

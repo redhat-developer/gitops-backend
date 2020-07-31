@@ -101,7 +101,7 @@ func mapStringMap(key string, meta map[string]interface{}) map[string]string {
 }
 
 // convert converts a Kustomize resource into a generic Unstructured resource
-// which the gitops engine Sync needs.
+// which which the unstructured converter uses to create resources from.
 func convert(r *resource.Resource) *unstructured.Unstructured {
 	return &unstructured.Unstructured{
 		Object: r.Map(),

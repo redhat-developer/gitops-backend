@@ -7,8 +7,6 @@ import (
 
 	"github.com/go-git/go-git/v5"
 	"github.com/google/go-cmp/cmp"
-	// "sigs.k8s.io/kustomize/pkg/gvk"
-	// "sigs.k8s.io/kustomize/pkg/resource"
 )
 
 const (
@@ -84,6 +82,38 @@ func TestParseFromGit(t *testing.T) {
 				partOfLabel: "go-demo",
 			},
 			Images: []string{"redis:6-alpine"},
+		},
+		{
+			Group:   "apps",
+			Version: "v1",
+			Kind:    "StatefulSet",
+			Name:    "go-demo-web",
+			Labels: map[string]string{
+				partOfLabel: "go-demo",
+				nameLabel:   "go-demo",
+			},
+			Images: []string{"bigkevmcd/go-demo-api:v0.0.1"},
+		},
+		{
+			Group:   "batch",
+			Version: "v1",
+			Kind:    "Job",
+			Name:    "demo-job",
+			Labels: map[string]string{
+				nameLabel:   "go-demo",
+				partOfLabel: "go-demo",
+			},
+			Images: []string{"bigkevmcd/go-demo:876ecb3"},
+		},
+		{
+			Group:   "batch",
+			Version: "v1beta1",
+			Kind:    "CronJob",
+			Name:    "hello",
+			Labels: map[string]string{
+				nameLabel:   "go-demo",
+				partOfLabel: "go-demo"},
+			Images: []string{"alpine:latest"},
 		},
 	}
 	sort.SliceStable(want, func(i, j int) bool { return resKey(want[i]) < resKey(want[j]) })

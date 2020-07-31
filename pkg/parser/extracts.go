@@ -16,6 +16,7 @@ func extractImages(conv *UnstructuredConverter, g gvk.Gvk, v *unstructured.Unstr
 	if err != nil {
 		return nil
 	}
+
 	// Deployments, DeploymentConfigs, StatefulSets, DaemonSets, Jobs, CronJobs
 	switch k := d.(type) {
 	case *appsv1.Deployment:
