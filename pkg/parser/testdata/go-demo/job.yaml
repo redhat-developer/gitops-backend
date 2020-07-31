@@ -1,0 +1,13 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: demo-job
+  labels:
+    app.kubernetes.io/name: go-demo
+spec:
+  template:
+    spec:
+      containers:
+      - name: demo-job-executor
+        image: bigkevmcd/go-demo:876ecb3
+      restartPolicy: Never

@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: statefulset-web
+  labels:
+    app.kubernetes.io/name: go-demo
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: go-demo
+  serviceName: web
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: go-demo
+    spec:
+      containers:
+      - name: test-web
+        image: bigkevmcd/go-web-demo:0b5e5c0
+        ports:
+        - containerPort: 8080
