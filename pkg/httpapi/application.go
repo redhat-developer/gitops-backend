@@ -11,6 +11,8 @@ import (
 	"github.com/rhd-gitops-example/gitops-backend/pkg/parser"
 )
 
+const nameLabel = "app.kubernetes.io/name"
+
 // TODO: if the environment doesn't exist, this should return a not found error.
 func (a *APIRouter) environmentApplication(authToken string, c *config, envName, appName string) (map[string]interface{}, error) {
 	if c.GitOpsURL == "" {
@@ -91,8 +93,6 @@ func parseServicesFromResources(env *environment, res []*parser.Resource) ([]res
 	}
 	return services, nil
 }
-
-const nameLabel = "app.kubernetes.io/name"
 
 func serviceFromLabels(l map[string]string) string {
 	return l[nameLabel]

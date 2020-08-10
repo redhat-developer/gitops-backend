@@ -1,13 +1,13 @@
 package parser
 
 import (
-	"sort"
-
 	ocpappsv1 "github.com/openshift/api/apps/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
+
+	"github.com/rhd-gitops-example/gitops-backend/internal/sets"
 )
 
 // Deployments, DeploymentConfigs, StatefulSets, DaemonSets, Jobs, CronJobs
@@ -30,27 +30,12 @@ func extractImages(v interface{}) []string {
 }
 
 func extractImagesFromPodTemplateSpec(p corev1.PodTemplateSpec) []string {
-	images := stringSet{}
+	images := sets.NewStringSet()
 	for _, c := range p.Spec.InitContainers {
-		images.add(c.Image)
+		images.Add(c.Image)
 	}
 	for _, c := range p.Spec.Containers {
-		images.add(c.Image)
+		images.Add(c.Image)
 	}
-	return images.elements()
-}
-
-type stringSet map[string]bool
-
-func (s stringSet) add(n string) {
-	s[n] = true
-}
-
-func (s stringSet) elements() []string {
-	e := []string{}
-	for k := range s {
-		e = append(e, k)
-	}
-	sort.Strings(e)
-	return e
+	return images.Elements()
 }

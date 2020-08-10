@@ -38,7 +38,7 @@ func TestParseFromGit(t *testing.T) {
 	res, err := ParseFromGit(
 		"pkg/parser/testdata/go-demo",
 		&git.CloneOptions{
-			URL:   "../..",
+			URL:   "https://github.com/rhd-gitops-example/gitops-backend.git",
 			Depth: 1,
 		})
 	if err != nil {

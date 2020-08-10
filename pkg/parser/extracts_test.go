@@ -7,21 +7,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func TestStringSet(t *testing.T) {
-	s := stringSet{}
-
-	s.add("testing1")
-	s.add("testing1")
-	s.add("testing2")
-
-	got := s.elements()
-
-	want := []string{"testing1", "testing2"}
-	if diff := cmp.Diff(got, want); diff != "" {
-		t.Fatalf("set failed:\n%s", diff)
-	}
-}
-
 func TestExtractImagesFromPodTemplateSpec(t *testing.T) {
 	spec := corev1.PodTemplateSpec{
 		Spec: corev1.PodSpec{
