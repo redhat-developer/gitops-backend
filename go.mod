@@ -21,6 +21,7 @@ require (
 	github.com/mitchellh/mapstructure v1.3.2 // indirect
 	github.com/nbio/st v0.0.0-20140626010706-e9e8d9816f32 // indirect
 	github.com/onsi/ginkgo v1.12.3 // indirect
+	github.com/openshift/api v3.9.0+incompatible
 	github.com/pelletier/go-toml v1.6.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_golang v1.1.0

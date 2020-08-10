@@ -53,7 +53,7 @@ func parseConfig(path string, files fs.FileSystem) ([]*Resource, error) {
 		return nil, nil
 	}
 
-	conv, err := NewUnstructuredConverter()
+	conv, err := newUnstructuredConverter()
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +64,7 @@ func parseConfig(path string, files fs.FileSystem) ([]*Resource, error) {
 	return resources, nil
 }
 
-func extractResource(conv *UnstructuredConverter, g gvk.Gvk, v *resource.Resource) *Resource {
+func extractResource(conv *unstructuredConverter, g gvk.Gvk, v *resource.Resource) *Resource {
 	m := v.Map()
 	meta := m["metadata"].(map[string]interface{})
 	r := &Resource{
@@ -75,7 +75,7 @@ func extractResource(conv *UnstructuredConverter, g gvk.Gvk, v *resource.Resourc
 		Kind:      g.Kind,
 		Labels:    mapStringMap("labels", meta),
 	}
-	r.Images = extractImages(conv, g, convert(v))
+	r.Images = extractImages(conv, convert(v))
 	return r
 }
 

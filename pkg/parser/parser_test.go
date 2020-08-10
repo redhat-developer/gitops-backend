@@ -115,6 +115,16 @@ func TestParseFromGit(t *testing.T) {
 				partOfLabel: "go-demo"},
 			Images: []string{"alpine:latest"},
 		},
+		{
+			Version: "v1",
+			Group:   "apps.openshift.io",
+			Kind:    "DeploymentConfig",
+			Name:    "frontend",
+			Labels: map[string]string{
+				nameLabel:   "go-demo",
+				partOfLabel: "go-demo"},
+			Images: []string{"demo/demo-config:v5"},
+		},
 	}
 	sort.SliceStable(want, func(i, j int) bool { return resKey(want[i]) < resKey(want[j]) })
 	assertCmp(t, want, res, "failed to match parsed resources")

@@ -3,21 +3,21 @@ package parser
 import (
 	"sort"
 
+	ocpappsv1 "github.com/openshift/api/apps/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
+
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"sigs.k8s.io/kustomize/pkg/gvk"
 )
 
-func extractImages(conv *UnstructuredConverter, g gvk.Gvk, v *unstructured.Unstructured) []string {
-	d, err := conv.FromUnstructured(v)
+// Deployments, DeploymentConfigs, StatefulSets, DaemonSets, Jobs, CronJobs
+func extractImages(conv *unstructuredConverter, v *unstructured.Unstructured) []string {
+	d, err := conv.fromUnstructured(v)
 	if err != nil {
 		return nil
 	}
-
-	// Deployments, DeploymentConfigs, StatefulSets, DaemonSets, Jobs, CronJobs
 	switch k := d.(type) {
 	case *appsv1.Deployment:
 		return extractImagesFromPodTemplateSpec(k.Spec.Template)
@@ -29,6 +29,8 @@ func extractImages(conv *UnstructuredConverter, g gvk.Gvk, v *unstructured.Unstr
 		return extractImagesFromPodTemplateSpec(k.Spec.Template)
 	case *batchv1beta1.CronJob:
 		return extractImagesFromPodTemplateSpec(k.Spec.JobTemplate.Spec.Template)
+	case *ocpappsv1.DeploymentConfig:
+		return extractImagesFromPodTemplateSpec(*k.Spec.Template)
 	}
 	return nil
 }
