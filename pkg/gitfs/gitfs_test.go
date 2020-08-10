@@ -4,9 +4,10 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/go-git/go-git/v5"
 	"github.com/google/go-cmp/cmp"
 	"sigs.k8s.io/kustomize/pkg/fs"
+
+	"github.com/rhd-gitops-example/gitops-backend/test"
 )
 
 var _ fs.FileSystem = gitFS{}
@@ -105,9 +106,7 @@ func TestNewInMemoryFromOptions(t *testing.T) {
 func makeClonedGFS(t *testing.T) fs.FileSystem {
 	t.Helper()
 	gfs, err := NewInMemoryFromOptions(
-		&git.CloneOptions{
-			URL: "../../",
-		})
+		test.MakeCloneOptions())
 	assertNoError(t, err)
 	return gfs
 }
