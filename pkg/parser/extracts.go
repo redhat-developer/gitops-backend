@@ -8,17 +8,11 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
-
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 // Deployments, DeploymentConfigs, StatefulSets, DaemonSets, Jobs, CronJobs
-func extractImages(conv *unstructuredConverter, v *unstructured.Unstructured) []string {
-	d, err := conv.fromUnstructured(v)
-	if err != nil {
-		return nil
-	}
-	switch k := d.(type) {
+func extractImages(v interface{}) []string {
+	switch k := v.(type) {
 	case *appsv1.Deployment:
 		return extractImagesFromPodTemplateSpec(k.Spec.Template)
 	case *appsv1.StatefulSet:

@@ -6,7 +6,6 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/kustomize/k8sdeps"
 	"sigs.k8s.io/kustomize/pkg/fs"
-	"sigs.k8s.io/kustomize/pkg/gvk"
 	"sigs.k8s.io/kustomize/pkg/loader"
 	"sigs.k8s.io/kustomize/pkg/resource"
 	"sigs.k8s.io/kustomize/pkg/target"
@@ -58,46 +57,33 @@ func parseConfig(path string, files fs.FileSystem) ([]*Resource, error) {
 		return nil, err
 	}
 	resources := []*Resource{}
-	for k, v := range r {
-		resources = append(resources, extractResource(conv, k.Gvk(), v))
+	for _, v := range r {
+		resources = append(resources, extractResource(conv, v))
 	}
 	return resources, nil
 }
 
-func extractResource(conv *unstructuredConverter, g gvk.Gvk, v *resource.Resource) *Resource {
-	m := v.Map()
-	meta := m["metadata"].(map[string]interface{})
+// convert the Kustomize Resource into an internal representation, extracting
+// the images if possible.
+//
+// If this is an unknown type (to the converter) no images will be extracted.
+func extractResource(conv *unstructuredConverter, res *resource.Resource) *Resource {
+	c := convert(res)
+	g := c.GroupVersionKind()
 	r := &Resource{
-		Name:      mapString("name", meta),
-		Namespace: mapString("namespace", meta),
+		Name:      c.GetName(),
+		Namespace: c.GetNamespace(),
 		Group:     g.Group,
 		Version:   g.Version,
 		Kind:      g.Kind,
-		Labels:    mapStringMap("labels", meta),
+		Labels:    c.GetLabels(),
 	}
-	r.Images = extractImages(conv, convert(v))
+	t, err := conv.fromUnstructured(c)
+	if err != nil {
+		return r
+	}
+	r.Images = extractImages(t)
 	return r
-}
-
-// TODO: These should be extracted from the parsed resource.
-func mapString(k string, v map[string]interface{}) string {
-	s, ok := v[k].(string)
-	if !ok {
-		return ""
-	}
-	return s
-}
-
-func mapStringMap(key string, meta map[string]interface{}) map[string]string {
-	s, ok := meta[key].(map[string]interface{})
-	if !ok {
-		return map[string]string{}
-	}
-	items := map[string]string{}
-	for k, v := range s {
-		items[k] = v.(string)
-	}
-	return items
 }
 
 // convert converts a Kustomize resource into a generic Unstructured resource
