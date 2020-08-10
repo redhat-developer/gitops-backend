@@ -1,11 +1,13 @@
 package parser
 
 import (
+	"os"
 	"sort"
 	"strings"
 	"testing"
 
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -37,10 +39,7 @@ func resKey(r *Resource) string {
 func TestParseFromGit(t *testing.T) {
 	res, err := ParseFromGit(
 		"pkg/parser/testdata/go-demo",
-		&git.CloneOptions{
-			URL:   "https://github.com/rhd-gitops-example/gitops-backend.git",
-			Depth: 1,
-		})
+		makeCloneOptions())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -135,4 +134,16 @@ func assertCmp(t *testing.T, want, got interface{}, msg string) {
 	if diff := cmp.Diff(want, got); diff != "" {
 		t.Fatalf(msg+":\n%s", diff)
 	}
+}
+
+// If running in Travis, ensure that it's using the correct branch.
+func makeCloneOptions() *git.CloneOptions {
+	o := &git.CloneOptions{
+		URL:   "../..",
+		Depth: 1,
+	}
+	if b := os.Getenv("TRAVIS_PULL_REQUEST_BRANCH"); b != "" {
+		o.ReferenceName = plumbing.NewBranchReferenceName(b)
+	}
+	return o
 }
