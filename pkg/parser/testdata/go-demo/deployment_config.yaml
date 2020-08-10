@@ -1,0 +1,30 @@
+apiVersion: apps.openshift.io/v1
+kind: DeploymentConfig
+metadata:
+  name: frontend
+  labels:
+    app.kubernetes.io/name: go-demo
+spec:
+  replicas: 5
+  selector:
+    app.kubernetes.io/name: go-demo
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: go-demo
+    spec:
+      containers:
+      - image: demo/demo-config:v5
+        name: demo-service
+  triggers:
+  - type: ConfigChange
+  - imageChangeParams:
+      automatic: true
+      containerNames:
+      - helloworld
+      from:
+        kind: ImageStreamTag
+        name: hello-openshift:latest
+    type: ImageChange
+  strategy:
+    type: Rolling
