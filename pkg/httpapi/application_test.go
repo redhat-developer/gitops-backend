@@ -170,3 +170,81 @@ func TestParseServicesFromResourcesReturnsSetOfImages(t *testing.T) {
 		t.Fatalf("parseServicesFromResources got\n%s", diff)
 	}
 }
+
+func TestParseServicesFromResourcesIgnoresEmptyServices(t *testing.T) {
+	res := []*parser.Resource{
+		{
+			Group: "apps", Version: "v1", Kind: "Deployment", Name: "go-demo-http",
+			Labels: map[string]string{},
+			Images: []string{"bigkevmcd/go-demo:876ecb3"},
+		},
+		{
+			Version: "v1", Kind: "Service", Name: "go-demo-http",
+			Labels: map[string]string{},
+		},
+	}
+	env := &environment{
+		Name:    "test-env",
+		Cluster: "https://cluster.local",
+		Apps: []*application{
+			{
+				Name: "my-app",
+				Services: []service{
+					{
+						Name:      "go-demo",
+						SourceURL: testSourceURL,
+					},
+				},
+			},
+		},
+	}
+
+	svcs, err := parseServicesFromResources(env, res)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := []responseService{}
+	if diff := cmp.Diff(want, svcs); diff != "" {
+		t.Fatalf("parseServicesFromResources got\n%s", diff)
+	}
+}
+
+func TestParseServicesFromResourcesIgnoresUnknownServices(t *testing.T) {
+	res := []*parser.Resource{
+		{
+			Group: "apps", Version: "v1", Kind: "Deployment", Name: "go-demo-http",
+			Labels: map[string]string{
+				nameLabel:   "unknown",
+				partOfLabel: "unknown",
+			},
+			Images: []string{"bigkevmcd/go-demo:876ecb3"},
+		},
+	}
+
+	env := &environment{
+		Name:    "test-env",
+		Cluster: "https://cluster.local",
+		Apps: []*application{
+			{
+				Name: "my-app",
+				Services: []service{
+					{
+						Name:      "go-demo",
+						SourceURL: testSourceURL,
+					},
+				},
+			},
+		},
+	}
+
+	svcs, err := parseServicesFromResources(env, res)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := []responseService{}
+	if diff := cmp.Diff(want, svcs); diff != "" {
+		t.Fatalf("parseServicesFromResources got\n%s", diff)
+	}
+}
