@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/rhd-gitops-example/gitops-backend/pkg/resource"
+	"github.com/rhd-gitops-example/gitops-backend/pkg/parser"
 )
 
 const (
@@ -15,7 +15,7 @@ const (
 const testSourceURL = "https://github.com/rhd-example-gitops/gitops-demo.git"
 
 func TestParseServicesFromResources(t *testing.T) {
-	goDemoResources := []*resource.Resource{
+	goDemoResources := []*parser.Resource{
 		{
 			Group: "apps", Version: "v1", Kind: "Deployment", Name: "go-demo-http",
 			Labels: map[string]string{
@@ -40,7 +40,7 @@ func TestParseServicesFromResources(t *testing.T) {
 		},
 	}
 
-	redisResources := []*resource.Resource{
+	redisResources := []*parser.Resource{
 		{
 			Version: "v1", Kind: "Service", Name: "redis",
 			Labels: map[string]string{
@@ -109,7 +109,7 @@ func TestParseServicesFromResources(t *testing.T) {
 }
 
 func TestParseServicesFromResourcesReturnsSetOfImages(t *testing.T) {
-	res := []*resource.Resource{
+	res := []*parser.Resource{
 		{
 			Group: "apps", Version: "v1", Kind: "Deployment", Name: "go-demo-http",
 			Labels: map[string]string{

@@ -6,3 +6,7 @@ resources:
 - configMap.yaml
 - redis_service.yaml
 - redis_deployment.yaml
+- job.yaml
+- cron_job.yaml
+- stateful_set.yaml
+- deployment_config.yaml

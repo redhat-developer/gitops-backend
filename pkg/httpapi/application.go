@@ -8,8 +8,10 @@ import (
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
-	"github.com/rhd-gitops-example/gitops-backend/pkg/resource"
+	"github.com/rhd-gitops-example/gitops-backend/pkg/parser"
 )
+
+const nameLabel = "app.kubernetes.io/name"
 
 // TODO: if the environment doesn't exist, this should return a not found error.
 func (a *APIRouter) environmentApplication(authToken string, c *config, envName, appName string) (map[string]interface{}, error) {
@@ -47,9 +49,9 @@ func pathForApplication(appName, envName string) string {
 	return path.Join("environments", envName, "apps", appName)
 }
 
-func parseServicesFromResources(env *environment, res []*resource.Resource) ([]responseService, error) {
+func parseServicesFromResources(env *environment, res []*parser.Resource) ([]responseService, error) {
 	serviceImages := map[string]map[string]bool{}
-	serviceResources := map[string][]*resource.Resource{}
+	serviceResources := map[string][]*parser.Resource{}
 	for _, v := range res {
 		name := serviceFromLabels(v.Labels)
 		images, ok := serviceImages[name]
@@ -62,7 +64,7 @@ func parseServicesFromResources(env *environment, res []*resource.Resource) ([]r
 		serviceImages[name] = images
 		resources, ok := serviceResources[name]
 		if !ok {
-			resources = []*resource.Resource{}
+			resources = []*parser.Resource{}
 		}
 		resources = append(resources, v)
 		serviceResources[name] = resources
@@ -92,17 +94,15 @@ func parseServicesFromResources(env *environment, res []*resource.Resource) ([]r
 	return services, nil
 }
 
-const nameLabel = "app.kubernetes.io/name"
-
 func serviceFromLabels(l map[string]string) string {
 	return l[nameLabel]
 }
 
 type responseService struct {
-	Name      string               `json:"name"`
-	Source    source               `json:"source,omitempty"`
-	Images    []string             `json:"images,omitempty"`
-	Resources []*resource.Resource `json:"resources,omitempty"`
+	Name      string             `json:"name"`
+	Source    source             `json:"source,omitempty"`
+	Images    []string           `json:"images,omitempty"`
+	Resources []*parser.Resource `json:"resources,omitempty"`
 }
 
 type source struct {

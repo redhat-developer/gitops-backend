@@ -7,8 +7,8 @@ import (
 
 	"github.com/go-git/go-git/v5"
 	"github.com/google/go-cmp/cmp"
-	"github.com/rhd-gitops-example/gitops-backend/pkg/resource"
-	"sigs.k8s.io/kustomize/pkg/gvk"
+
+	"github.com/rhd-gitops-example/gitops-backend/test"
 )
 
 const (
@@ -32,23 +32,20 @@ func TestParseNoFile(t *testing.T) {
 	}
 }
 
-func resKey(r *resource.Resource) string {
+func resKey(r *Resource) string {
 	return strings.Join([]string{r.Name, r.Namespace, r.Group, r.Kind, r.Version}, "-")
 }
 
 func TestParseFromGit(t *testing.T) {
 	res, err := ParseFromGit(
 		"pkg/parser/testdata/go-demo",
-		&git.CloneOptions{
-			URL:   "../..",
-			Depth: 1,
-		})
+		test.MakeCloneOptions())
 	if err != nil {
 		t.Fatal(err)
 	}
 	sort.SliceStable(res, func(i, j int) bool { return resKey(res[i]) < resKey(res[j]) })
 
-	want := []*resource.Resource{
+	want := []*Resource{
 		{
 			Group: "apps", Version: "v1", Kind: "Deployment", Name: "go-demo-http",
 			Labels: map[string]string{
@@ -85,36 +82,51 @@ func TestParseFromGit(t *testing.T) {
 			},
 			Images: []string{"redis:6-alpine"},
 		},
+		{
+			Group:   "apps",
+			Version: "v1",
+			Kind:    "StatefulSet",
+			Name:    "go-demo-web",
+			Labels: map[string]string{
+				partOfLabel: "go-demo",
+				nameLabel:   "go-demo",
+			},
+			Images: []string{"bigkevmcd/go-demo-api:v0.0.1"},
+		},
+		{
+			Group:   "batch",
+			Version: "v1",
+			Kind:    "Job",
+			Name:    "demo-job",
+			Labels: map[string]string{
+				nameLabel:   "go-demo",
+				partOfLabel: "go-demo",
+			},
+			Images: []string{"bigkevmcd/go-demo:876ecb3"},
+		},
+		{
+			Group:   "batch",
+			Version: "v1beta1",
+			Kind:    "CronJob",
+			Name:    "hello",
+			Labels: map[string]string{
+				nameLabel:   "go-demo",
+				partOfLabel: "go-demo"},
+			Images: []string{"alpine:latest"},
+		},
+		{
+			Version: "v1",
+			Group:   "apps.openshift.io",
+			Kind:    "DeploymentConfig",
+			Name:    "frontend",
+			Labels: map[string]string{
+				nameLabel:   "go-demo",
+				partOfLabel: "go-demo"},
+			Images: []string{"demo/demo-config:v5"},
+		},
 	}
 	sort.SliceStable(want, func(i, j int) bool { return resKey(want[i]) < resKey(want[j]) })
 	assertCmp(t, want, res, "failed to match parsed resources")
-}
-
-func TestExtractResource(t *testing.T) {
-	redisMap := map[string]interface{}{
-		"apiVersion": "apps/v1",
-		"kind":       "Deployment",
-		"metadata": map[string]interface{}{
-			"labels": map[string]interface{}{
-				nameLabel:   "redis",
-				partOfLabel: "go-demo",
-			},
-			"name":      "redis",
-			"namespace": "test-env",
-		},
-	}
-
-	svc := extractResource(gvk.Gvk{Group: "apps", Version: "v1", Kind: "Deployment"}, redisMap)
-	want := &resource.Resource{
-		Name:      "redis",
-		Namespace: "test-env",
-		Group:     "apps",
-		Version:   "v1",
-		Kind:      "Deployment",
-		Labels:    map[string]string{nameLabel: "redis", partOfLabel: "go-demo"},
-		Images:    []string{},
-	}
-	assertCmp(t, want, svc, "failed to match resource")
 }
 
 func assertCmp(t *testing.T, want, got interface{}, msg string) {
