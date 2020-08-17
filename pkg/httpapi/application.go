@@ -73,9 +73,19 @@ func parseServicesFromResources(env *environment, res []*parser.Resource) ([]res
 	services := []responseService{}
 	for k, v := range serviceImages {
 		svc := env.findService(k)
+		// If the extracted service name is not known within this environment,
+		// this drops it from the response.
+		if svc == nil {
+			continue
+		}
 		svcRepo := ""
 		if svc != nil {
 			svcRepo = svc.SourceURL
+		}
+		// This skips services where we haven't extracted a name from the
+		// labels.
+		if k == "" {
+			continue
 		}
 		rs := responseService{
 			Name:      k,
