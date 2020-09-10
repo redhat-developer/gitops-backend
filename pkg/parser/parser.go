@@ -13,11 +13,6 @@ import (
 	"github.com/rhd-gitops-example/gitops-backend/pkg/gitfs"
 )
 
-const (
-	serviceLabel = "app.kubernetes.io/name"
-	appLabel     = "app.kubernetes.io/part-of"
-)
-
 // ParseFromGit takes a go-git CloneOptions struct and a filepath, and extracts
 // the service configuration from there.
 func ParseFromGit(path string, opts *git.CloneOptions) ([]*Resource, error) {
