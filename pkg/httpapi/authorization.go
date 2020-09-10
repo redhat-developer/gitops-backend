@@ -7,18 +7,19 @@ import (
 )
 
 const (
-	authHeader      = "Authorization"
-	authTokenCtxKey = "auth-token"
+	authHeader = "Authorization"
 )
+
+type authTokenCtxKey struct{}
 
 // AuthToken gets the auth token from the context.
 func AuthToken(ctx context.Context) string {
-	return ctx.Value(authTokenCtxKey).(string)
+	return ctx.Value(authTokenCtxKey{}).(string)
 }
 
 // WithAuthToken sets the auth token into the context.
 func WithAuthToken(ctx context.Context, t string) context.Context {
-	return context.WithValue(ctx, authTokenCtxKey, t)
+	return context.WithValue(ctx, authTokenCtxKey{}, t)
 }
 
 // AuthenticationMiddleware wraps an http.Handler and checks for the presence of
