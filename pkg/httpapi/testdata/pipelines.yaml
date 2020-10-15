@@ -4,7 +4,7 @@ config:
   pipelines:
     name: cicd
 environments:
-- cluster: https://dev.testing.svc
+- cluster: https://dev03.example.com
   apps:
   - name: taxi
     services:
@@ -26,4 +26,5 @@ environments:
       - github-push-binding
       template: app-ci-template
 - name: stage
+  cluster: https://kubernetes.default.svc
 gitops_url: https://example.com/demo/gitops.git

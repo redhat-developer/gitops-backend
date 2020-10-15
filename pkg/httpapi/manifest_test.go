@@ -25,7 +25,7 @@ func TestParse(t *testing.T) {
 		Environments: []*environment{
 			{
 				Name:    "dev",
-				Cluster: "https://dev.testing.svc",
+				Cluster: "https://dev03.example.com",
 				Apps: []*application{
 					{
 						Name: "taxi",
@@ -38,7 +38,10 @@ func TestParse(t *testing.T) {
 					},
 				},
 			},
-			{Name: "stage"},
+			{
+				Name:    "stage",
+				Cluster: "https://kubernetes.default.svc",
+			},
 		},
 	}
 
