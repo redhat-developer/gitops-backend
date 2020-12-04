@@ -16,7 +16,7 @@ import (
 
 func TestFileContents(t *testing.T) {
 	m := metrics.NewMock()
-	as := makeAPIServer(t, "/api/v3/repos/Codertocat/Hello-World/contents/pipelines.yaml", "master", "testdata/content.json")
+	as := makeAPIServer(t, "/api/v3/repos/Codertocat/Hello-World/contents/pipelines.yaml", "main", "testdata/content.json")
 	defer as.Close()
 	scmClient, err := factory.NewClient("github", as.URL, "", factory.Client(as.Client()))
 	if err != nil {
@@ -24,7 +24,7 @@ func TestFileContents(t *testing.T) {
 	}
 	client := New(scmClient, m)
 
-	body, err := client.FileContents(context.TODO(), "Codertocat/Hello-World", "pipelines.yaml", "master")
+	body, err := client.FileContents(context.TODO(), "Codertocat/Hello-World", "pipelines.yaml", "main")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -39,7 +39,7 @@ func TestFileContents(t *testing.T) {
 
 func TestFileContentsWithNotFoundResponse(t *testing.T) {
 	m := metrics.NewMock()
-	as := makeAPIServer(t, "/api/v3/repos/Codertocat/Hello-World/contents/pipelines.yaml", "master", "")
+	as := makeAPIServer(t, "/api/v3/repos/Codertocat/Hello-World/contents/pipelines.yaml", "main", "")
 	defer as.Close()
 	scmClient, err := factory.NewClient("github", as.URL, "", factory.Client(as.Client()))
 	if err != nil {
@@ -47,7 +47,7 @@ func TestFileContentsWithNotFoundResponse(t *testing.T) {
 	}
 	client := New(scmClient, m)
 
-	_, err = client.FileContents(context.TODO(), "Codertocat/Hello-World", "pipelines.yaml", "master")
+	_, err = client.FileContents(context.TODO(), "Codertocat/Hello-World", "pipelines.yaml", "main")
 	if !IsNotFound(err) {
 		t.Fatalf("failed with %#v", err)
 	}
@@ -64,7 +64,7 @@ func TestFileContentsUnableToConnect(t *testing.T) {
 	}
 	client := New(scmClient, m)
 
-	_, err = client.FileContents(context.TODO(), "Codertocat/Hello-World", "pipelines.yaml", "master")
+	_, err = client.FileContents(context.TODO(), "Codertocat/Hello-World", "pipelines.yaml", "main")
 	if !test.MatchError(t, "connection refused", err) {
 		t.Fatal(err)
 	}

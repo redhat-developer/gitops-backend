@@ -105,9 +105,9 @@
     "forks": 1,
     "open_issues": 2,
     "watchers": 0,
-    "default_branch": "master",
+    "default_branch": "main",
     "stargazers": 0,
-    "master_branch": "master"
+    "main_branch": "main"
   },
   "pusher": {
     "name": "Codertocat",
