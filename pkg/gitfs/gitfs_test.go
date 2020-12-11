@@ -7,7 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"sigs.k8s.io/kustomize/pkg/fs"
 
-	"github.com/rhd-gitops-example/gitops-backend/test"
+	"github.com/redhat-developer/gitops-backend/test"
 )
 
 var _ fs.FileSystem = gitFS{}

@@ -1,4 +1,4 @@
-module github.com/rhd-gitops-example/gitops-backend
+module github.com/redhat-developer/gitops-backend
 
 go 1.14
 
@@ -28,6 +28,7 @@ require (
 	github.com/prometheus/client_model v0.0.0-20190812154241-14fe0d1b01d4 // indirect
 	github.com/prometheus/common v0.7.0 // indirect
 	github.com/prometheus/procfs v0.0.5 // indirect
+	github.com/rhd-gitops-example/gitops-backend v0.0.0-20200922164111-e3fd3401e6cd
 	github.com/shurcooL/githubv4 v0.0.0-20191102174205-af46314aec7b // indirect
 	github.com/spf13/cast v1.3.1 // indirect
 	github.com/spf13/cobra v1.0.0

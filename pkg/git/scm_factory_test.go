@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/jenkins-x/go-scm/scm"
-	"github.com/rhd-gitops-example/gitops-backend/pkg/metrics"
-	"github.com/rhd-gitops-example/gitops-backend/test"
+	"github.com/redhat-developer/gitops-backend/pkg/metrics"
+	"github.com/redhat-developer/gitops-backend/test"
 )
 
 var _ ClientFactory = (*SCMClientFactory)(nil)

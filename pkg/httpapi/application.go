@@ -8,7 +8,7 @@ import (
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
-	"github.com/rhd-gitops-example/gitops-backend/pkg/parser"
+	"github.com/redhat-developer/gitops-backend/pkg/parser"
 )
 
 const nameLabel = "app.kubernetes.io/name"

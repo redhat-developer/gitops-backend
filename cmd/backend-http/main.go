@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/rhd-gitops-example/gitops-backend/pkg/cmd"
+	"github.com/redhat-developer/gitops-backend/pkg/cmd"
 )
 
 func main() {

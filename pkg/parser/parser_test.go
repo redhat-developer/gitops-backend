@@ -8,7 +8,7 @@ import (
 	"github.com/go-git/go-git/v5"
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/rhd-gitops-example/gitops-backend/test"
+	"github.com/redhat-developer/gitops-backend/test"
 )
 
 const (
