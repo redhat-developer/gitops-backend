@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/jenkins-x/go-scm/scm"
-	"github.com/rhd-gitops-example/gitops-backend/pkg/metrics"
+	"github.com/redhat-developer/gitops-backend/pkg/metrics"
 )
 
 // New creates and returns a new SCMClient.

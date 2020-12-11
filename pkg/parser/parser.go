@@ -10,7 +10,7 @@ import (
 	"sigs.k8s.io/kustomize/pkg/resource"
 	"sigs.k8s.io/kustomize/pkg/target"
 
-	"github.com/rhd-gitops-example/gitops-backend/pkg/gitfs"
+	"github.com/redhat-developer/gitops-backend/pkg/gitfs"
 )
 
 // ParseFromGit takes a go-git CloneOptions struct and a filepath, and extracts

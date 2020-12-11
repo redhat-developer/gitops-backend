@@ -14,9 +14,9 @@ import (
 
 	gogit "github.com/go-git/go-git/v5"
 	"github.com/google/go-cmp/cmp"
-	"github.com/rhd-gitops-example/gitops-backend/pkg/git"
-	"github.com/rhd-gitops-example/gitops-backend/pkg/parser"
-	"github.com/rhd-gitops-example/gitops-backend/test"
+	"github.com/redhat-developer/gitops-backend/pkg/git"
+	"github.com/redhat-developer/gitops-backend/pkg/parser"
+	"github.com/redhat-developer/gitops-backend/test"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/yaml"
 )

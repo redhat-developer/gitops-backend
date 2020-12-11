@@ -13,9 +13,9 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/yaml"
 
-	"github.com/rhd-gitops-example/gitops-backend/pkg/git"
-	"github.com/rhd-gitops-example/gitops-backend/pkg/httpapi/secrets"
-	"github.com/rhd-gitops-example/gitops-backend/pkg/parser"
+	"github.com/redhat-developer/gitops-backend/pkg/git"
+	"github.com/redhat-developer/gitops-backend/pkg/httpapi/secrets"
+	"github.com/redhat-developer/gitops-backend/pkg/parser"
 )
 
 // DefaultSecretRef is the name looked up if none is provided in the URL.

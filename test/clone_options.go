@@ -16,7 +16,7 @@ func MakeCloneOptions() *git.CloneOptions {
 	}
 	if b := os.Getenv("TRAVIS_PULL_REQUEST_BRANCH"); b != "" {
 		o.ReferenceName = plumbing.NewBranchReferenceName(b)
-		o.URL = "https://github.com/rhd-gitops-example/gitops-backend.git"
+		o.URL = "https://github.com/redhat-developer/gitops-backend.git"
 	}
 	return o
 }

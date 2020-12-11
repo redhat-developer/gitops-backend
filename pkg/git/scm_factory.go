@@ -5,7 +5,7 @@ import (
 	"net/url"
 
 	scmfactory "github.com/jenkins-x/go-scm/scm/factory"
-	"github.com/rhd-gitops-example/gitops-backend/pkg/metrics"
+	"github.com/redhat-developer/gitops-backend/pkg/metrics"
 )
 
 // SCMClientFactory is an implementation of the GitClientFactory interface that can
