@@ -7,8 +7,14 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 )
 
-// MakeCloneOptions determines if we are running in Travis,
+// MakeCloneOptions determines if we are running in GitHub,
 // and ensures that it's using the correct branch.
+//
+// This is because the codebase that the tests run in is not a clone, so we have
+// to clone the upstream.
+//
+// For local development, you're working on the branch, and we can use that
+// branch correctly.
 func MakeCloneOptions() *git.CloneOptions {
 	o := &git.CloneOptions{
 		URL:   "../..",
