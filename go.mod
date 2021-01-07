@@ -1,6 +1,6 @@
 module github.com/redhat-developer/gitops-backend
 
-go 1.14
+go 1.15
 
 require (
 	github.com/emicklei/go-restful v2.12.0+incompatible // indirect
