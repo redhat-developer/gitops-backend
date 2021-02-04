@@ -134,7 +134,6 @@ func TestParseFromGit(t *testing.T) {
 
 func TestParseFromApplication(t *testing.T) {
 	a := testReadApplication(t, "testdata/go_demo.yaml")
-
 	r, err := ParseFromApplication(a)
 	if err != nil {
 		t.Fatal(err)

@@ -13,8 +13,8 @@ import (
 	"github.com/redhat-developer/gitops-backend/pkg/git"
 	"github.com/redhat-developer/gitops-backend/pkg/health"
 	"github.com/redhat-developer/gitops-backend/pkg/httpapi"
-	"github.com/redhat-developer/gitops-backend/pkg/httpapi/secrets"
 	"github.com/redhat-developer/gitops-backend/pkg/metrics"
+	"github.com/redhat-developer/gitops-backend/pkg/secrets"
 )
 
 const (

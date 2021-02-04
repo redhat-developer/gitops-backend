@@ -14,8 +14,8 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/redhat-developer/gitops-backend/pkg/git"
-	"github.com/redhat-developer/gitops-backend/pkg/httpapi/secrets"
 	"github.com/redhat-developer/gitops-backend/pkg/parser"
+	"github.com/redhat-developer/gitops-backend/pkg/secrets"
 )
 
 // DefaultSecretRef is the name looked up if none is provided in the URL.
