@@ -1,6 +1,6 @@
 package parser
 
-// Object a basic object for a Kubernetes object.
+// Resource is a basic representation of a Kubernetes object.
 type Resource struct {
 	Group     string            `json:"group"`
 	Version   string            `json:"version"`

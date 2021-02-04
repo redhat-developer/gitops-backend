@@ -1,0 +1,251 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  creationTimestamp: "2021-02-04T08:44:54Z"
+  generation: 48
+  labels:
+    app.kubernetes.io/name: backend-demo
+  managedFields:
+  - apiVersion: argoproj.io/v1alpha1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:metadata:
+        f:labels:
+          .: {}
+          f:app.kubernetes.io/name: {}
+      f:spec:
+        .: {}
+        f:destination:
+          .: {}
+          f:namespace: {}
+          f:server: {}
+        f:project: {}
+        f:source:
+          .: {}
+          f:path: {}
+          f:repoURL: {}
+    manager: kubectl-create
+    operation: Update
+    time: "2021-02-04T08:44:54Z"
+  - apiVersion: argoproj.io/v1alpha1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:status:
+        f:summary:
+          .: {}
+          f:images: {}
+    manager: argocd-server
+    operation: Update
+    time: "2021-02-04T08:45:11Z"
+  - apiVersion: argoproj.io/v1alpha1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:status:
+        .: {}
+        f:health:
+          .: {}
+          f:status: {}
+        f:history: {}
+        f:operationState:
+          .: {}
+          f:finishedAt: {}
+          f:message: {}
+          f:operation:
+            .: {}
+            f:initiatedBy:
+              .: {}
+              f:username: {}
+            f:retry: {}
+            f:sync:
+              .: {}
+              f:prune: {}
+              f:revision: {}
+              f:syncStrategy:
+                .: {}
+                f:hook: {}
+          f:phase: {}
+          f:startedAt: {}
+          f:syncResult:
+            .: {}
+            f:resources: {}
+            f:revision: {}
+            f:source:
+              .: {}
+              f:path: {}
+              f:repoURL: {}
+        f:reconciledAt: {}
+        f:resources: {}
+        f:sourceType: {}
+        f:summary:
+          f:images: {}
+        f:sync:
+          .: {}
+          f:comparedTo:
+            .: {}
+            f:destination:
+              .: {}
+              f:namespace: {}
+              f:server: {}
+            f:source:
+              .: {}
+              f:path: {}
+              f:repoURL: {}
+          f:revision: {}
+          f:status: {}
+    manager: argocd-application-controller
+    operation: Update
+    time: "2021-02-04T08:45:13Z"
+  name: backend-demo
+  namespace: argocd
+  resourceVersion: "5065"
+  uid: 568880dd-d7ea-462a-bc4b-a0601a38d92d
+spec:
+  destination:
+    namespace: dev
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    path: examples/kustomize/environments/dev
+    repoURL: https://github.com/redhat-developer/backend-demo.git
+status:
+  health:
+    status: Healthy
+  history:
+  - deployStartedAt: "2021-02-04T08:45:11Z"
+    deployedAt: "2021-02-04T08:45:13Z"
+    id: 0
+    revision: 1ad79e5490bc015fbf1636e85f1687bc8d90b160
+    source:
+      path: examples/kustomize/environments/dev
+      repoURL: https://github.com/redhat-developer/backend-demo.git
+  operationState:
+    finishedAt: "2021-02-04T08:45:13Z"
+    message: successfully synced (all tasks run)
+    operation:
+      initiatedBy:
+        username: admin
+      retry: {}
+      sync:
+        prune: true
+        revision: 1ad79e5490bc015fbf1636e85f1687bc8d90b160
+        syncStrategy:
+          hook: {}
+    phase: Succeeded
+    startedAt: "2021-02-04T08:45:11Z"
+    syncResult:
+      resources:
+      - group: ""
+        hookPhase: Running
+        kind: Namespace
+        message: 'namespace/dev configured. Warning:  apply should be used on resource
+          created by either  create --save-config or  apply'
+        name: dev
+        namespace: dev
+        status: Synced
+        syncPhase: Sync
+        version: v1
+      - group: ""
+        hookPhase: Running
+        kind: ConfigMap
+        message: configmap/backend-demo-config created
+        name: backend-demo-config
+        namespace: dev
+        status: Synced
+        syncPhase: Sync
+        version: v1
+      - group: ""
+        hookPhase: Running
+        kind: Service
+        message: service/backend-demo-http created
+        name: backend-demo-http
+        namespace: dev
+        status: Synced
+        syncPhase: Sync
+        version: v1
+      - group: ""
+        hookPhase: Running
+        kind: Service
+        message: service/redis created
+        name: redis
+        namespace: dev
+        status: Synced
+        syncPhase: Sync
+        version: v1
+      - group: apps
+        hookPhase: Running
+        kind: Deployment
+        message: deployment.apps/backend-demo-http created
+        name: backend-demo-http
+        namespace: dev
+        status: Synced
+        syncPhase: Sync
+        version: v1
+      - group: apps
+        hookPhase: Running
+        kind: Deployment
+        message: deployment.apps/redis created
+        name: redis
+        namespace: dev
+        status: Synced
+        syncPhase: Sync
+        version: v1
+      revision: 1ad79e5490bc015fbf1636e85f1687bc8d90b160
+      source:
+        path: examples/kustomize/environments/dev
+        repoURL: https://github.com/redhat-developer/backend-demo.git
+  reconciledAt: "2021-02-04T10:15:40Z"
+  resources:
+  - kind: ConfigMap
+    name: backend-demo-config
+    namespace: dev
+    status: Synced
+    version: v1
+  - kind: Namespace
+    name: dev
+    status: Synced
+    version: v1
+  - health:
+      status: Healthy
+    kind: Service
+    name: backend-demo-http
+    namespace: dev
+    status: Synced
+    version: v1
+  - health:
+      status: Healthy
+    kind: Service
+    name: redis
+    namespace: dev
+    status: Synced
+    version: v1
+  - group: apps
+    health:
+      status: Healthy
+    kind: Deployment
+    name: backend-demo-http
+    namespace: dev
+    status: OutOfSync
+    version: v1
+  - group: apps
+    health:
+      status: Healthy
+    kind: Deployment
+    name: redis
+    namespace: dev
+    status: Synced
+    version: v1
+  sourceType: Kustomize
+  summary:
+    images:
+    - redhat-developer/backend-demo:demo
+    - redis:6-alpine
+  sync:
+    comparedTo:
+      destination:
+        namespace: dev
+        server: https://kubernetes.default.svc
+      source:
+        path: examples/kustomize/environments/dev
+        repoURL: https://github.com/redhat-developer/backend-demo.git
+    revision: 1ad79e5490bc015fbf1636e85f1687bc8d90b160
+    status: OutOfSync

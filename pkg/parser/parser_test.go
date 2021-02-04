@@ -1,12 +1,15 @@
 package parser
 
 import (
+	"io/ioutil"
 	"sort"
 	"strings"
 	"testing"
 
+	appv1 "github.com/argoproj/argo-cd/pkg/apis/application/v1alpha1"
 	"github.com/go-git/go-git/v5"
 	"github.com/google/go-cmp/cmp"
+	"sigs.k8s.io/yaml"
 
 	"github.com/redhat-developer/gitops-backend/test"
 )
@@ -127,6 +130,40 @@ func TestParseFromGit(t *testing.T) {
 	}
 	sort.SliceStable(want, func(i, j int) bool { return resKey(want[i]) < resKey(want[j]) })
 	assertCmp(t, want, res, "failed to match parsed resources")
+}
+
+func TestParseFromApplication(t *testing.T) {
+	a := testReadApplication(t, "testdata/go_demo.yaml")
+
+	r, err := ParseFromApplication(a)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := []*Resource{
+		{Version: "v1", Kind: "ConfigMap", Name: "backend-demo-config", Namespace: "dev"},
+		{Version: "v1", Kind: "Namespace", Name: "dev"},
+		{Version: "v1", Kind: "Service", Name: "backend-demo-http", Namespace: "dev"},
+		{Version: "v1", Kind: "Service", Name: "redis", Namespace: "dev"},
+		{Group: "apps", Version: "v1", Kind: "Deployment", Name: "backend-demo-http", Namespace: "dev"},
+		{Group: "apps", Version: "v1", Kind: "Deployment", Name: "redis", Namespace: "dev"},
+	}
+	if diff := cmp.Diff(want, r); diff != "" {
+		t.Fatalf("parse failure:\n%s", diff)
+	}
+}
+
+func testReadApplication(t *testing.T, s string) *appv1.Application {
+	t.Helper()
+	b, err := ioutil.ReadFile(s)
+	if err != nil {
+		t.Fatal(err)
+	}
+	a := &appv1.Application{}
+	if err := yaml.Unmarshal(b, a); err != nil {
+		t.Fatal(err)
+	}
+	return a
 }
 
 func assertCmp(t *testing.T, want, got interface{}, msg string) {

@@ -3,6 +3,7 @@ package parser
 import (
 	"github.com/go-git/go-git/v5"
 
+	appv1 "github.com/argoproj/argo-cd/pkg/apis/application/v1alpha1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/kustomize/k8sdeps"
 	"sigs.k8s.io/kustomize/pkg/fs"
@@ -56,6 +57,26 @@ func parseConfig(path string, files fs.FileSystem) ([]*Resource, error) {
 		resources = append(resources, extractResource(conv, v))
 	}
 	return resources, nil
+}
+
+// ParseFromApplication parses an argocd Application object and extracts the
+// resources from it.
+func ParseFromApplication(a *appv1.Application) ([]*Resource, error) {
+	resources := []*Resource{}
+	for _, v := range a.Status.Resources {
+		resources = append(resources, extractApplicationResource(v))
+	}
+	return resources, nil
+}
+
+func extractApplicationResource(rs appv1.ResourceStatus) *Resource {
+	return &Resource{
+		Group:     rs.Group,
+		Version:   rs.Version,
+		Kind:      rs.Kind,
+		Name:      rs.Name,
+		Namespace: rs.Namespace,
+	}
 }
 
 // convert the Kustomize Resource into an internal representation, extracting
