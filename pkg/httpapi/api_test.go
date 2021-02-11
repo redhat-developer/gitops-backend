@@ -267,8 +267,9 @@ func TestParseURL(t *testing.T) {
 		wantRepo string
 		wantErr  string
 	}{
-		{"https://github.com/example/gitops.git", "example/gitops", ""},
+		{"https://github.com/example/gitops.git?ref=main", "example/gitops", ""},
 		{"%%foo.html", "", "invalid URL escape"},
+		{"https://github.com/example/testing.git", "example/testing", ""},
 	}
 
 	for _, tt := range urlTests {

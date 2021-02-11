@@ -184,7 +184,7 @@ func parseURL(s string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to parse %#v: %w", s, err)
 	}
-	return strings.TrimLeft(strings.Trim(parsed.Path, ".git"), "/"), nil
+	return strings.TrimLeft(strings.TrimSuffix(parsed.Path, ".git"), "/"), nil
 }
 
 func secretRefFromQuery(v url.Values) (types.NamespacedName, bool) {
