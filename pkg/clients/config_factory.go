@@ -1,4 +1,4 @@
-package secrets
+package clients
 
 import (
 	"k8s.io/client-go/rest"

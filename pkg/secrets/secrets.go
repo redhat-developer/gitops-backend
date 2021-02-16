@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/redhat-developer/gitops-backend/pkg/clients"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
@@ -12,17 +13,17 @@ import (
 
 // KubeSecretGetter is an implementation of SecretGetter.
 type KubeSecretGetter struct {
-	configFactory RESTConfigFactory
+	configFactory clients.RESTConfigFactory
 	clientFactory func(*rest.Config) (kubernetes.Interface, error)
 }
 
 // NewFromConfig creates a secret getter from a rest.Config.
 func NewFromConfig(cfg *rest.Config, insecure bool) *KubeSecretGetter {
-	return New(NewRESTConfigFactory(cfg, insecure))
+	return New(clients.NewRESTConfigFactory(cfg, insecure))
 }
 
 // New creates and returns a KubeSecretGetter that looks up secrets in k8s.
-func New(c RESTConfigFactory) *KubeSecretGetter {
+func New(c clients.RESTConfigFactory) *KubeSecretGetter {
 	return &KubeSecretGetter{
 		configFactory: c,
 		clientFactory: func(c *rest.Config) (kubernetes.Interface, error) {
