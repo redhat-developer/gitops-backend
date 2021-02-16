@@ -13,6 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/yaml"
 
+	"github.com/redhat-developer/gitops-backend/pkg/applications"
 	"github.com/redhat-developer/gitops-backend/pkg/git"
 	"github.com/redhat-developer/gitops-backend/pkg/parser"
 	"github.com/redhat-developer/gitops-backend/pkg/secrets"
@@ -24,81 +25,47 @@ var DefaultSecretRef = types.NamespacedName{
 	Namespace: "pipelines-app-delivery",
 }
 
-const defaultRef = "main"
+const (
+	defaultRef = "main"
+
+	gitopsNS = "openshift-gitops"
+)
 
 // APIRouter is an HTTP API for accessing app configurations.
 type APIRouter struct {
 	*httprouter.Router
-	gitClientFactory git.ClientFactory
-	secretGetter     secrets.SecretGetter
-	secretRef        types.NamespacedName
-	resourceParser   parser.ResourceParser
+	gitClientFactory  git.ClientFactory
+	secretGetter      secrets.SecretGetter
+	secretRef         types.NamespacedName
+	resourceParser    parser.ResourceParser
+	applicationGetter applications.ApplicationGetter
 }
 
 // NewRouter creates and returns a new APIRouter.
-func NewRouter(c git.ClientFactory, s secrets.SecretGetter) *APIRouter {
+func NewRouter(c git.ClientFactory, s secrets.SecretGetter, a applications.ApplicationGetter) *APIRouter {
 	api := &APIRouter{
-		Router:           httprouter.New(),
-		gitClientFactory: c,
-		secretGetter:     s,
-		secretRef:        DefaultSecretRef,
-		resourceParser:   parser.ParseFromGit,
+		Router:            httprouter.New(),
+		gitClientFactory:  c,
+		applicationGetter: a,
+		secretGetter:      s,
+		secretRef:         DefaultSecretRef,
+		resourceParser:    parser.ParseFromGit,
 	}
-	api.HandlerFunc(http.MethodGet, "/pipelines", api.GetPipelines)
+	api.HandlerFunc(http.MethodGet, "/pipelines", api.GetApplications)
 	api.HandlerFunc(http.MethodGet, "/environments/:env/application/:app", api.GetApplication)
 	return api
 }
 
-// GetPipelines fetches and returns the pipeline body.
-func (a *APIRouter) GetPipelines(w http.ResponseWriter, r *http.Request) {
-	urlToFetch := r.URL.Query().Get("url")
-	if urlToFetch == "" {
-		log.Println("ERROR: could not get url from request")
-		http.Error(w, "missing parameter 'url'", http.StatusBadRequest)
+// GetApplications fetches and returns the list of applications in the namespace.
+func (a *APIRouter) GetApplications(w http.ResponseWriter, r *http.Request) {
+	apps, err := a.applicationGetter.ListApplications(r.Context(), AuthToken(r.Context()), namespaceFromRequest(r, gitopsNS))
+	if err != nil {
+		log.Printf("ERROR: failed to list applications: %s\n", err)
+		http.Error(w, "could not get application list", http.StatusInternalServerError)
 		return
 	}
 
-	// TODO: replace this with logr or sugar.
-	log.Printf("urlToFetch = %#v\n", urlToFetch)
-	repo, err := parseURL(urlToFetch)
-	if err != nil {
-		log.Printf("ERROR: failed to parse the URL: %s", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	token, err := a.getAuthToken(r.Context(), r)
-	if err != nil {
-		log.Printf("ERROR: failed to get an authentication token: %s", err)
-		http.Error(w, "unable to authenticate request", http.StatusBadRequest)
-		return
-	}
-	client, err := a.getAuthenticatedGitClient(urlToFetch, token)
-	if err != nil {
-		log.Printf("ERROR: failed to get an authenticated client: %s", err)
-		http.Error(w, "unable to authenticate request", http.StatusBadRequest)
-		return
-	}
-
-	// TODO: don't send back the error directly.
-	//
-	// Add a "not found" error that can be returned, otherwise it's a
-	// StatusInternalServerError.
-	log.Println("got an authenticated client")
-	body, err := client.FileContents(r.Context(), repo, "pipelines.yaml", refFromQuery(r.URL.Query()))
-	if err != nil {
-		log.Printf("ERROR: failed to get file contents for repo %#v: %s", repo, err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	pipelines := &config{}
-	err = yaml.Unmarshal(body, &pipelines)
-	if err != nil {
-		log.Printf("ERROR: failed to unmarshal body: %s", err)
-		http.Error(w, fmt.Sprintf("failed to unmarshal pipelines.yaml: %s", err.Error()), http.StatusBadRequest)
-		return
-	}
-	marshalResponse(w, pipelinesToAppsResponse(pipelines))
+	marshalResponse(w, appsToResponse(apps))
 }
 
 // GetApplication fetches an application within a specific environment.
@@ -175,6 +142,7 @@ func (a *APIRouter) getAuthToken(ctx context.Context, req *http.Request) (string
 	}
 	return token, nil
 }
+
 func (a *APIRouter) getAuthenticatedGitClient(fetchURL, token string) (git.SCM, error) {
 	return a.gitClientFactory.Create(fetchURL, token)
 }
@@ -212,4 +180,11 @@ func marshalResponse(w http.ResponseWriter, v interface{}) {
 	if err := json.NewEncoder(w).Encode(v); err != nil {
 		log.Printf("failed to encode response: %s", err)
 	}
+}
+
+func namespaceFromRequest(r *http.Request, defaultNS string) string {
+	if ns := r.URL.Query().Get("ns"); ns != "" {
+		return ns
+	}
+	return defaultNS
 }

@@ -12,86 +12,114 @@ import (
 	"strings"
 	"testing"
 
+	appv1 "github.com/argoproj/argo-cd/pkg/apis/application/v1alpha1"
 	gogit "github.com/go-git/go-git/v5"
 	"github.com/google/go-cmp/cmp"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/yaml"
+
+	"github.com/redhat-developer/gitops-backend/pkg/applications"
 	"github.com/redhat-developer/gitops-backend/pkg/git"
 	"github.com/redhat-developer/gitops-backend/pkg/parser"
 	"github.com/redhat-developer/gitops-backend/test"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/yaml"
 )
 
 const (
-	testRef = "7638417db6d59f3c431d3e1f261cc637155684cd"
+	testRef     = "7638417db6d59f3c431d3e1f261cc637155684cd"
+	testRepoURL = "https://example.com/demo/gitops.git"
 )
 
-func TestGetPipelines(t *testing.T) {
-	ts, c := makeServer(t)
-	c.addContents("example/gitops", "pipelines.yaml", "main", "testdata/pipelines.yaml")
-	pipelinesURL := "https://github.com/example/gitops.git"
+func TestGetApplications(t *testing.T) {
+	ts, mg := makeServerForArgoCD(t)
+	mg.AddListResponse(*makeTestApplication(
+		"dev",
+		testRepoURL,
+		types.NamespacedName{Name: "dev-app-taxi", Namespace: gitopsNS}),
+	)
 
-	req := makeClientRequest(t, "Bearer testing", fmt.Sprintf("%s/pipelines?url=%s", ts.URL, pipelinesURL))
-	res, err := ts.Client().Do(req)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	assertJSONResponse(t, res, map[string]interface{}{
-		"applications": []interface{}{
-			map[string]interface{}{
-				"name":         "taxi",
-				"repo_url":     "https://example.com/demo/gitops.git",
-				"environments": []interface{}{"dev"},
-			},
-		},
-	})
-}
-
-func TestGetPipelinesWithASpecificRef(t *testing.T) {
-	ts, c := makeServer(t)
-	c.addContents("example/gitops", "pipelines.yaml", testRef, "testdata/pipelines.yaml")
-	pipelinesURL := "https://github.com/example/gitops.git"
-
-	req := makeClientRequest(t, "Bearer testing", fmt.Sprintf("%s/pipelines?url=%s&ref=%s", ts.URL, pipelinesURL, testRef))
-	res, err := ts.Client().Do(req)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	assertJSONResponse(t, res, map[string]interface{}{
-		"applications": []interface{}{
-			map[string]interface{}{
-				"name":         "taxi",
-				"repo_url":     "https://example.com/demo/gitops.git",
-				"environments": []interface{}{"dev"},
-			},
-		},
-	})
-}
-
-func TestGetPipelinesWithNoURL(t *testing.T) {
-	ts, _ := makeServer(t)
 	req := makeClientRequest(t, "Bearer testing", fmt.Sprintf("%s/pipelines", ts.URL))
 	res, err := ts.Client().Do(req)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assertHTTPError(t, res, http.StatusBadRequest, "missing parameter 'url'")
+
+	assertJSONResponse(t, res, map[string]interface{}{
+		"applications": []interface{}{
+			map[string]interface{}{
+				"name":         "taxi",
+				"repo_url":     testRepoURL,
+				"environments": []interface{}{"dev"},
+			},
+		},
+	})
 }
 
-func TestGetPipelinesWithBadURL(t *testing.T) {
-	ts, c := makeServer(t)
-	c.addContents("example/gitops", "pipelines.yaml", "main", "testdata/pipelines.yaml")
-	req := makeClientRequest(t, "Bearer testing", fmt.Sprintf("%s/pipelines?url=%%%%test.html", ts.URL))
+func TestGetApplicationsInNamespace(t *testing.T) {
+	ts, mg := makeServerForArgoCD(t)
+	mg.AddListResponse(
+		*makeTestApplication(
+			"dev",
+			testRepoURL,
+			types.NamespacedName{Name: "dev-app-taxi", Namespace: gitopsNS}))
+	mg.AddListResponse(
+		*makeTestApplication(
+			"production",
+			testRepoURL,
+			types.NamespacedName{Name: "production-app-taxi", Namespace: "testing"}),
+	)
+
+	req := makeClientRequest(t, "Bearer testing", fmt.Sprintf("%s/pipelines?ns=testing", ts.URL))
 	res, err := ts.Client().Do(req)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assertHTTPError(t, res, http.StatusBadRequest, "missing parameter 'url'")
+
+	assertJSONResponse(t, res, map[string]interface{}{
+		"applications": []interface{}{
+			map[string]interface{}{
+				"name":         "taxi",
+				"repo_url":     "https://example.com/demo/gitops.git",
+				"environments": []interface{}{"production"},
+			},
+		},
+	})
+
+}
+
+func TestGetApplicationsInMultipleNamespaces(t *testing.T) {
+	ts, mg := makeServerForArgoCD(t)
+	mg.AddListResponse(
+		*makeTestApplication(
+			"dev",
+			testRepoURL,
+			types.NamespacedName{Name: "dev-app-taxi", Namespace: gitopsNS}))
+	mg.AddListResponse(
+		*makeTestApplication(
+			"production",
+			testRepoURL,
+			types.NamespacedName{Name: "production-app-taxi", Namespace: gitopsNS}),
+	)
+
+	req := makeClientRequest(t, "Bearer testing", fmt.Sprintf("%s/pipelines", ts.URL))
+	res, err := ts.Client().Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assertJSONResponse(t, res, map[string]interface{}{
+		"applications": []interface{}{
+			map[string]interface{}{
+				"name":         "taxi",
+				"repo_url":     "https://example.com/demo/gitops.git",
+				"environments": []interface{}{"dev", "production"},
+			},
+		},
+	})
 }
 
 func TestGetPipelinesWithNoAuthorizationHeader(t *testing.T) {
-	ts, _ := makeServer(t)
+	ts, _ := makeServerForArgoCD(t)
 	req := makeClientRequest(t, "", fmt.Sprintf("%s/pipelines", ts.URL))
 
 	res, err := ts.Client().Do(req)
@@ -99,63 +127,6 @@ func TestGetPipelinesWithNoAuthorizationHeader(t *testing.T) {
 		t.Fatal(err)
 	}
 	assertHTTPError(t, res, http.StatusForbidden, "Authentication required")
-}
-
-func TestGetPipelinesWithNamespaceAndNameInURL(t *testing.T) {
-	secretRef := types.NamespacedName{
-		Name:      "other-name",
-		Namespace: "other-ns",
-	}
-	sg := &stubSecretGetter{
-		testToken:     "test-token",
-		testName:      secretRef,
-		testAuthToken: "testing",
-		testKey:       "token",
-	}
-	ts, c := makeServer(t, func(a *APIRouter) {
-		a.secretGetter = sg
-	})
-	c.addContents("example/gitops", "pipelines.yaml", "main", "testdata/pipelines.yaml")
-	pipelinesURL := "https://github.com/example/gitops.git"
-	options := url.Values{
-		"url":        []string{pipelinesURL},
-		"secretName": []string{"other-name"},
-		"secretNS":   []string{"other-ns"},
-	}
-	req := makeClientRequest(t, "Bearer testing", fmt.Sprintf("%s/pipelines?%s", ts.URL, options.Encode()))
-
-	res, err := ts.Client().Do(req)
-
-	if err != nil {
-		t.Fatal(err)
-	}
-	assertJSONResponse(t, res, map[string]interface{}{
-		"applications": []interface{}{
-			map[string]interface{}{
-				"name":         "taxi",
-				"repo_url":     "https://example.com/demo/gitops.git",
-				"environments": []interface{}{"dev"},
-			},
-		},
-	})
-}
-
-func TestGetPipelinesWithUnknownSecret(t *testing.T) {
-	ts, c := makeServer(t)
-	c.addContents("example/gitops", "pipelines.yaml", "main", "testdata/pipelines.yaml")
-	pipelinesURL := "https://github.com/example/gitops.git"
-	options := url.Values{
-		"url":        []string{pipelinesURL},
-		"secretName": []string{"other-name"},
-		"secretNS":   []string{"other-ns"},
-	}
-	req := makeClientRequest(t, "Bearer testing", fmt.Sprintf("%s/pipelines?%s", ts.URL, options.Encode()))
-	res, err := ts.Client().Do(req)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	assertErrorResponse(t, res, http.StatusBadRequest, "unable to authenticate request")
 }
 
 func TestGetPipelineApplication(t *testing.T) {
@@ -219,6 +190,10 @@ func TestGetPipelineApplicationWithRef(t *testing.T) {
 		Labels: map[string]string{
 			nameLabel: "gitops-demo",
 		},
+		Images: []string{
+			"quay.io/redhat/testone:v1",
+			"quay.io/redhat/testtwo:v2",
+		},
 	}
 
 	ts, c := makeServer(t, func(a *APIRouter) {
@@ -251,6 +226,9 @@ func TestGetPipelineApplicationWithRef(t *testing.T) {
 						"namespace": "test-ns",
 						"version":   "v1",
 					},
+				},
+				"images": []interface{}{
+					"quay.io/redhat/testone:v1", "quay.io/redhat/testtwo:v2",
 				},
 				"source": map[string]interface{}{
 					"type": "example.com",
@@ -333,6 +311,18 @@ func makeClientRequest(t *testing.T, token, path string) *http.Request {
 
 type routerOptionFunc func(*APIRouter)
 
+func makeServerForArgoCD(t *testing.T, opts ...routerOptionFunc) (*httptest.Server, *applications.MockGetter) {
+	mg := applications.NewMock()
+	router := NewRouter(nil, nil, mg)
+	for _, o := range opts {
+		o(router)
+	}
+
+	ts := httptest.NewTLSServer(AuthenticationMiddleware(router))
+	t.Cleanup(ts.Close)
+	return ts, mg
+}
+
 func makeServer(t *testing.T, opts ...routerOptionFunc) (*httptest.Server, *stubClient) {
 	sg := &stubSecretGetter{
 		testToken:     "test-token",
@@ -341,7 +331,7 @@ func makeServer(t *testing.T, opts ...routerOptionFunc) (*httptest.Server, *stub
 		testKey:       "token",
 	}
 	sf := &stubClientFactory{client: newClient()}
-	router := NewRouter(sf, sg)
+	router := NewRouter(sf, sg, nil)
 	for _, o := range opts {
 		o(router)
 	}
@@ -429,5 +419,22 @@ func (s stubClientFactory) Create(url, token string) (git.SCM, error) {
 func stubResourceParser(r ...*parser.Resource) parser.ResourceParser {
 	return func(path string, opts *gogit.CloneOptions) ([]*parser.Resource, error) {
 		return r, nil
+	}
+}
+
+func makeTestApplication(destNS, repoURL string, id types.NamespacedName) *appv1.Application {
+	return &appv1.Application{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      id.Name,
+			Namespace: id.Namespace,
+		},
+		Spec: appv1.ApplicationSpec{
+			Destination: appv1.ApplicationDestination{
+				Namespace: destNS,
+			},
+			Source: appv1.ApplicationSource{
+				RepoURL: repoURL,
+			},
+		},
 	}
 }
