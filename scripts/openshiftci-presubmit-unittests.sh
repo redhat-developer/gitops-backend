@@ -10,7 +10,8 @@ export CUSTOM_HOMEDIR=$ARTIFACTS_DIR
 export PATH=$PATH:$GOPATH/bin
 
 go env
-if [[ $(go fmt `go list ./...`) ]]; then
+go mod vendor
+if [[ $(go fmt `go list ./... | grep -v vendor`) ]]; then
     echo "not well formatted sources are found"
     exit 1
 fi
@@ -22,4 +23,4 @@ then
 fi
 
 # Unit tests to be referenced here
-echo "Please reference the unit test script(s) here"
+make test
