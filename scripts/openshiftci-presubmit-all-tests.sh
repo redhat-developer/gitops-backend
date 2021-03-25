@@ -12,7 +12,6 @@ export CI="prow"
 go mod vendor
 
 export PATH="$PATH:$(pwd)"
-export ARTIFACTS_DIR="/tmp/artifacts"
 
 # Reference e2e test(s)
 echo "Please reference the E2E test script(s) here"
