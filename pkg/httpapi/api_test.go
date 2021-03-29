@@ -50,9 +50,9 @@ func TestGetPipelines(t *testing.T) {
 func TestGetPipelinesWithASpecificRef(t *testing.T) {
 	ts, c := makeServer(t)
 	c.addContents("example/gitops", "pipelines.yaml", testRef, "testdata/pipelines.yaml")
-	pipelinesURL := "https://github.com/example/gitops.git"
+	pipelinesURL := fmt.Sprintf("https://github.com/example/gitops.git?ref=%s", testRef)
 
-	req := makeClientRequest(t, "Bearer testing", fmt.Sprintf("%s/pipelines?url=%s&ref=%s", ts.URL, pipelinesURL, testRef))
+	req := makeClientRequest(t, "Bearer testing", fmt.Sprintf("%s/pipelines?url=%s", ts.URL, pipelinesURL))
 	res, err := ts.Client().Do(req)
 	if err != nil {
 		t.Fatal(err)
@@ -225,10 +225,9 @@ func TestGetPipelineApplicationWithRef(t *testing.T) {
 		a.resourceParser = stubResourceParser(testResource)
 	})
 	c.addContents("example/gitops", "pipelines.yaml", testRef, "testdata/pipelines.yaml")
-	pipelinesURL := "https://github.com/example/gitops.git"
+	pipelinesURL := fmt.Sprintf("https://github.com/example/gitops.git?ref=%s", testRef)
 	options := url.Values{
 		"url": []string{pipelinesURL},
-		"ref": []string{testRef},
 	}
 	req := makeClientRequest(t, "Bearer testing",
 		fmt.Sprintf("%s/environments/%s/application/%s?%s", ts.URL, "dev", "taxi", options.Encode()))
@@ -273,10 +272,17 @@ func TestParseURL(t *testing.T) {
 	}
 
 	for _, tt := range urlTests {
-		repo, err := parseURL(tt.u)
+		repo, got, err := parseURL(tt.u)
 		if !test.MatchError(t, tt.wantErr, err) {
 			t.Errorf("got an unexpected error: %v", err)
 			continue
+		}
+		if err == nil {
+			want, err := url.Parse(tt.u)
+			assertNoError(t, err)
+			if got.String() != want.String() {
+				t.Errorf("Parsed URL mismatch: got %v, want %v", got.String(), want.String())
+			}
 		}
 		if repo != tt.wantRepo {
 			t.Errorf("repo got %s, want %s", repo, tt.wantRepo)
