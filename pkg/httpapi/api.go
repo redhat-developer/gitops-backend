@@ -24,7 +24,7 @@ var DefaultSecretRef = types.NamespacedName{
 	Namespace: "pipelines-app-delivery",
 }
 
-const defaultRef = "main"
+const defaultRef = "HEAD"
 
 // APIRouter is an HTTP API for accessing app configurations.
 type APIRouter struct {
