@@ -60,7 +60,7 @@ func (a *APIRouter) GetPipelines(w http.ResponseWriter, r *http.Request) {
 
 	// TODO: replace this with logr or sugar.
 	log.Printf("urlToFetch = %#v\n", urlToFetch)
-	repo, err := parseURL(urlToFetch)
+	repo, parsedRepo, err := parseURL(urlToFetch)
 	if err != nil {
 		log.Printf("ERROR: failed to parse the URL: %s", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -85,7 +85,7 @@ func (a *APIRouter) GetPipelines(w http.ResponseWriter, r *http.Request) {
 	// Add a "not found" error that can be returned, otherwise it's a
 	// StatusInternalServerError.
 	log.Println("got an authenticated client")
-	body, err := client.FileContents(r.Context(), repo, "pipelines.yaml", refFromQuery(r.URL.Query()))
+	body, err := client.FileContents(r.Context(), repo, "pipelines.yaml", refFromQuery(parsedRepo.Query()))
 	if err != nil {
 		log.Printf("ERROR: failed to get file contents for repo %#v: %s", repo, err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -114,7 +114,7 @@ func (a *APIRouter) GetApplication(w http.ResponseWriter, r *http.Request) {
 
 	// TODO: replace this with logr or sugar.
 	log.Printf("urlToFetch = %#v\n", urlToFetch)
-	repo, err := parseURL(urlToFetch)
+	repo, parsedRepo, err := parseURL(urlToFetch)
 	if err != nil {
 		log.Printf("ERROR: failed to parse the URL: %s", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -138,7 +138,7 @@ func (a *APIRouter) GetApplication(w http.ResponseWriter, r *http.Request) {
 	//
 	// Add a "not found" error that can be returned, otherwise it's a
 	// StatusInternalServerError.
-	body, err := client.FileContents(r.Context(), repo, "pipelines.yaml", refFromQuery(r.URL.Query()))
+	body, err := client.FileContents(r.Context(), repo, "pipelines.yaml", refFromQuery(parsedRepo.Query()))
 	if err != nil {
 		log.Printf("ERROR: failed to get file contents for repo %#v: %s", repo, err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -179,12 +179,12 @@ func (a *APIRouter) getAuthenticatedGitClient(fetchURL, token string) (git.SCM, 
 	return a.gitClientFactory.Create(fetchURL, token)
 }
 
-func parseURL(s string) (string, error) {
+func parseURL(s string) (string, *url.URL, error) {
 	parsed, err := url.Parse(s)
 	if err != nil {
-		return "", fmt.Errorf("failed to parse %#v: %w", s, err)
+		return "", nil, fmt.Errorf("failed to parse %#v: %w", s, err)
 	}
-	return strings.TrimLeft(strings.TrimSuffix(parsed.Path, ".git"), "/"), nil
+	return strings.TrimLeft(strings.TrimSuffix(parsed.Path, ".git"), "/"), parsed, nil
 }
 
 func secretRefFromQuery(v url.Values) (types.NamespacedName, bool) {
