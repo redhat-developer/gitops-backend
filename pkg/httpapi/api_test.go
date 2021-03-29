@@ -27,7 +27,7 @@ const (
 
 func TestGetPipelines(t *testing.T) {
 	ts, c := makeServer(t)
-	c.addContents("example/gitops", "pipelines.yaml", "main", "testdata/pipelines.yaml")
+	c.addContents("example/gitops", "pipelines.yaml", "HEAD", "testdata/pipelines.yaml")
 	pipelinesURL := "https://github.com/example/gitops.git"
 
 	req := makeClientRequest(t, "Bearer testing", fmt.Sprintf("%s/pipelines?url=%s", ts.URL, pipelinesURL))
@@ -115,7 +115,7 @@ func TestGetPipelinesWithNamespaceAndNameInURL(t *testing.T) {
 	ts, c := makeServer(t, func(a *APIRouter) {
 		a.secretGetter = sg
 	})
-	c.addContents("example/gitops", "pipelines.yaml", "main", "testdata/pipelines.yaml")
+	c.addContents("example/gitops", "pipelines.yaml", "HEAD", "testdata/pipelines.yaml")
 	pipelinesURL := "https://github.com/example/gitops.git"
 	options := url.Values{
 		"url":        []string{pipelinesURL},
@@ -173,7 +173,7 @@ func TestGetPipelineApplication(t *testing.T) {
 	ts, c := makeServer(t, func(a *APIRouter) {
 		a.resourceParser = stubResourceParser(testResource)
 	})
-	c.addContents("example/gitops", "pipelines.yaml", "main", "testdata/pipelines.yaml")
+	c.addContents("example/gitops", "pipelines.yaml", "HEAD", "testdata/pipelines.yaml")
 	pipelinesURL := "https://github.com/example/gitops.git"
 	options := url.Values{
 		"url": []string{pipelinesURL},
