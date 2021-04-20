@@ -18,6 +18,7 @@ import (
 	"github.com/redhat-developer/gitops-backend/pkg/parser"
 	"github.com/redhat-developer/gitops-backend/test"
 	"k8s.io/apimachinery/pkg/types"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 )
 
@@ -347,7 +348,8 @@ func makeServer(t *testing.T, opts ...routerOptionFunc) (*httptest.Server, *stub
 		testKey:       "token",
 	}
 	sf := &stubClientFactory{client: newClient()}
-	router := NewRouter(sf, sg)
+	var kc ctrlclient.Client
+	router := NewRouter(sf, sg, kc)
 	for _, o := range opts {
 		o(router)
 	}

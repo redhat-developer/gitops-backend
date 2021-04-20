@@ -9,8 +9,10 @@ import (
 	"net/url"
 	"strings"
 
+	argoV1aplha1 "github.com/argoproj/argo-cd/pkg/apis/application/v1alpha1"
 	"github.com/julienschmidt/httprouter"
 	"k8s.io/apimachinery/pkg/types"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
 	"github.com/redhat-developer/gitops-backend/pkg/git"
@@ -33,18 +35,21 @@ type APIRouter struct {
 	secretGetter     secrets.SecretGetter
 	secretRef        types.NamespacedName
 	resourceParser   parser.ResourceParser
+	k8sClient        ctrlclient.Client
 }
 
 // NewRouter creates and returns a new APIRouter.
-func NewRouter(c git.ClientFactory, s secrets.SecretGetter) *APIRouter {
+func NewRouter(c git.ClientFactory, s secrets.SecretGetter, kc ctrlclient.Client) *APIRouter {
 	api := &APIRouter{
 		Router:           httprouter.New(),
 		gitClientFactory: c,
 		secretGetter:     s,
 		secretRef:        DefaultSecretRef,
 		resourceParser:   parser.ParseFromGit,
+		k8sClient:        kc,
 	}
 	api.HandlerFunc(http.MethodGet, "/pipelines", api.GetPipelines)
+	api.HandlerFunc(http.MethodGet, "/applications", api.ListApplications)
 	api.HandlerFunc(http.MethodGet, "/environments/:env/application/:app", api.GetApplication)
 	return api
 }
@@ -159,6 +164,29 @@ func (a *APIRouter) GetApplication(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	marshalResponse(w, appEnvironments)
+}
+
+func (a *APIRouter) ListApplications(w http.ResponseWriter, r *http.Request) {
+	appList := &argoV1aplha1.ApplicationList{}
+	var listOptions []ctrlclient.ListOption
+
+	listOptions = append(listOptions, ctrlclient.InNamespace(""))
+	listOptions = append(listOptions, ctrlclient.MatchingLabels{"app.kubernetes.io/managed-by": "kam"})
+
+	err := a.k8sClient.List(r.Context(), appList, listOptions...)
+	if err != nil {
+		log.Printf("ERROR: failed to get application list: %v", err)
+		http.Error(w, fmt.Sprintf("failed to get list of application, err: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	apps := make([]*argoV1aplha1.Application, 0)
+	for _, app := range appList.Items {
+		apps = append(apps, app.DeepCopy())
+	}
+
+	log.Printf("apps: %+v", apps)
+	marshalResponse(w, applicationsToAppsResponse(apps))
 }
 
 func (a *APIRouter) getAuthToken(ctx context.Context, req *http.Request) (string, error) {
