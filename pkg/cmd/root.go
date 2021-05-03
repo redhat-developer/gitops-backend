@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	argoV1aplha1 "github.com/argoproj/argo-cd/pkg/apis/application/v1alpha1"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -12,6 +11,7 @@ import (
 	"github.com/spf13/viper"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/redhat-developer/gitops-backend/pkg/git"
 	"github.com/redhat-developer/gitops-backend/pkg/health"

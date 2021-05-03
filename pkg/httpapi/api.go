@@ -167,11 +167,16 @@ func (a *APIRouter) GetApplication(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *APIRouter) ListApplications(w http.ResponseWriter, r *http.Request) {
+	repoURL := strings.TrimSpace(r.URL.Query().Get("url"))
+	if repoURL == "" {
+		http.Error(w, "please provide a valid GitOps repo URL", http.StatusBadRequest)
+		return
+	}
+
 	appList := &argoV1aplha1.ApplicationList{}
 	var listOptions []ctrlclient.ListOption
 
 	listOptions = append(listOptions, ctrlclient.InNamespace(""))
-	listOptions = append(listOptions, ctrlclient.MatchingLabels{"app.kubernetes.io/managed-by": "kam"})
 
 	err := a.k8sClient.List(r.Context(), appList, listOptions...)
 	if err != nil {
@@ -185,8 +190,7 @@ func (a *APIRouter) ListApplications(w http.ResponseWriter, r *http.Request) {
 		apps = append(apps, app.DeepCopy())
 	}
 
-	log.Printf("apps: %+v", apps)
-	marshalResponse(w, applicationsToAppsResponse(apps))
+	marshalResponse(w, applicationsToAppsResponse(apps, repoURL))
 }
 
 func (a *APIRouter) getAuthToken(ctx context.Context, req *http.Request) (string, error) {

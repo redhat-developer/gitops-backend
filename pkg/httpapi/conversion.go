@@ -29,10 +29,17 @@ func pipelinesToAppsResponse(cfg *config) *appsResponse {
 	return &appsResponse{Apps: apps}
 }
 
-func applicationsToAppsResponse(appSet []*argoV1aplha1.Application) *appsResponse {
+func applicationsToAppsResponse(appSet []*argoV1aplha1.Application, repoURL string) *appsResponse {
 	appsMap := make(map[string]appResponse)
+	var appName string
+
 	for _, app := range appSet {
-		appName := app.ObjectMeta.Labels["app.kubernetes.io/name"]
+		if app.Spec.Source.RepoURL != repoURL {
+			continue
+		}
+		if app.ObjectMeta.Labels != nil {
+			appName = app.ObjectMeta.Labels["app.kubernetes.io/name"]
+		}
 		if appName == "" {
 			appName = app.ObjectMeta.Name
 		}
