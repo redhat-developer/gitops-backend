@@ -20,6 +20,7 @@ require (
 	github.com/prometheus/client_golang v1.7.1
 	github.com/robfig/cron v1.2.0 // indirect
 	github.com/shurcooL/githubv4 v0.0.0-20191102174205-af46314aec7b // indirect
+	github.com/sirupsen/logrus v1.7.0
 	github.com/spf13/cast v1.3.1 // indirect
 	github.com/spf13/cobra v1.1.1
 	github.com/spf13/viper v1.7.0

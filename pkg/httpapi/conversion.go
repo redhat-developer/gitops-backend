@@ -1,7 +1,9 @@
 package httpapi
 
 import (
+	log "github.com/sirupsen/logrus"
 	"sort"
+	"strings"
 
 	argoV1aplha1 "github.com/argoproj/argo-cd/pkg/apis/application/v1alpha1"
 )
@@ -32,17 +34,22 @@ func pipelinesToAppsResponse(cfg *config) *appsResponse {
 func applicationsToAppsResponse(appSet []*argoV1aplha1.Application, repoURL string) *appsResponse {
 	appsMap := make(map[string]appResponse)
 	var appName string
+	repoURL = strings.TrimSuffix(repoURL, ".git")
 
 	for _, app := range appSet {
-		if app.Spec.Source.RepoURL != repoURL {
+		if repoURL != strings.TrimSuffix(app.Spec.Source.RepoURL, ".git") {
+			log.Printf("repoURL[%v], doesn not match with Source Repo URL[%v]", repoURL, strings.TrimSuffix(app.Spec.Source.RepoURL, ".git"))
 			continue
 		}
 		if app.ObjectMeta.Labels != nil {
 			appName = app.ObjectMeta.Labels["app.kubernetes.io/name"]
 		}
+
 		if appName == "" {
-			appName = app.ObjectMeta.Name
+			log.Println("AppName is empty")
+			continue
 		}
+
 		if appResp, ok := appsMap[appName]; !ok {
 			appsMap[appName] = appResponse{
 				Name:         appName,

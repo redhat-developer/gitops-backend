@@ -173,12 +173,19 @@ func (a *APIRouter) ListApplications(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	parsedRepoURL, err := url.Parse(repoURL)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("failed to parse URL, error: %v", err), http.StatusBadRequest)
+	}
+
+	parsedRepoURL.RawQuery = ""
+
 	appList := &argoV1aplha1.ApplicationList{}
 	var listOptions []ctrlclient.ListOption
 
 	listOptions = append(listOptions, ctrlclient.InNamespace(""))
 
-	err := a.k8sClient.List(r.Context(), appList, listOptions...)
+	err = a.k8sClient.List(r.Context(), appList, listOptions...)
 	if err != nil {
 		log.Printf("ERROR: failed to get application list: %v", err)
 		http.Error(w, fmt.Sprintf("failed to get list of application, err: %v", err), http.StatusBadRequest)
@@ -190,7 +197,7 @@ func (a *APIRouter) ListApplications(w http.ResponseWriter, r *http.Request) {
 		apps = append(apps, app.DeepCopy())
 	}
 
-	marshalResponse(w, applicationsToAppsResponse(apps, repoURL))
+	marshalResponse(w, applicationsToAppsResponse(apps, parsedRepoURL.String()))
 }
 
 func (a *APIRouter) getAuthToken(ctx context.Context, req *http.Request) (string, error) {
