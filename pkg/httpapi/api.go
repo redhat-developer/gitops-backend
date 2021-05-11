@@ -176,6 +176,7 @@ func (a *APIRouter) ListApplications(w http.ResponseWriter, r *http.Request) {
 	parsedRepoURL, err := url.Parse(repoURL)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("failed to parse URL, error: %v", err), http.StatusBadRequest)
+		return
 	}
 
 	parsedRepoURL.RawQuery = ""
