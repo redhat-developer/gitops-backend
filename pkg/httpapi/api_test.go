@@ -12,12 +12,16 @@ import (
 	"strings"
 	"testing"
 
+	argoV1aplha1 "github.com/argoproj/argo-cd/pkg/apis/application/v1alpha1"
 	gogit "github.com/go-git/go-git/v5"
 	"github.com/google/go-cmp/cmp"
 	"github.com/redhat-developer/gitops-backend/pkg/git"
 	"github.com/redhat-developer/gitops-backend/pkg/parser"
 	"github.com/redhat-developer/gitops-backend/test"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/kubernetes/scheme"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/yaml"
 )
 
@@ -290,6 +294,72 @@ func TestParseURL(t *testing.T) {
 	}
 }
 
+func TestListApplications(t *testing.T) {
+	err := argoV1aplha1.AddToScheme(scheme.Scheme)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	builder := fake.NewClientBuilder()
+	kc := builder.Build()
+
+	ts, _ := makeServer(t, func(router *APIRouter) {
+		router.k8sClient = kc
+	})
+
+	var createOptions []ctrlclient.CreateOption
+	app, _ := testArgoApplication()
+	err = kc.Create(context.TODO(), app, createOptions...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	url := "https://github.com/test-repo/gitops.git?ref=HEAD"
+	req := makeClientRequest(t, "Bearer testing", fmt.Sprintf("%s/applications?url=%s", ts.URL, url))
+	res, err := ts.Client().Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assertJSONResponse(t, res, map[string]interface{}{
+		"applications": []interface{}{
+			map[string]interface{}{
+				"name":         "test-app",
+				"repo_url":     "https://github.com/test-repo/gitops.git",
+				"environments": []interface{}{"dev"},
+			},
+		},
+	})
+}
+
+func TestListApplications_badURL(t *testing.T) {
+	builder := fake.NewClientBuilder()
+	kc := builder.Build()
+
+	ts, _ := makeServer(t, func(router *APIRouter) {
+		router.k8sClient = kc
+	})
+
+	req := makeClientRequest(t, "Bearer testing", fmt.Sprintf("%s/applications", ts.URL))
+	resp, err := ts.Client().Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assertHTTPError(t, resp, http.StatusBadRequest, "please provide a valid GitOps repo URL")
+}
+
+func testArgoApplication() (*argoV1aplha1.Application, error) {
+	applicationYaml, _ := ioutil.ReadFile("testdata/application.yaml")
+	app := &argoV1aplha1.Application{}
+	err := yaml.Unmarshal(applicationYaml, app)
+	if err != nil {
+		return nil, err
+	}
+
+	return app, err
+}
+
 func newClient() *stubClient {
 	return &stubClient{files: make(map[string]string)}
 }
@@ -347,7 +417,8 @@ func makeServer(t *testing.T, opts ...routerOptionFunc) (*httptest.Server, *stub
 		testKey:       "token",
 	}
 	sf := &stubClientFactory{client: newClient()}
-	router := NewRouter(sf, sg)
+	var kc ctrlclient.Client
+	router := NewRouter(sf, sg, kc)
 	for _, o := range opts {
 		o(router)
 	}

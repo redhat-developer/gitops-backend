@@ -5,11 +5,14 @@ import (
 	"log"
 	"net/http"
 
+	argoV1aplha1 "github.com/argoproj/argo-cd/pkg/apis/application/v1alpha1"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/redhat-developer/gitops-backend/pkg/git"
 	"github.com/redhat-developer/gitops-backend/pkg/health"
 	"github.com/redhat-developer/gitops-backend/pkg/httpapi"
@@ -27,6 +30,9 @@ const (
 
 func init() {
 	cobra.OnInitialize(initConfig)
+	if err := argoV1aplha1.AddToScheme(scheme.Scheme); err != nil {
+		log.Fatalf("failed to initialize ArgoCD scheme, err: %v", err)
+	}
 }
 
 func logIfError(e error) {
@@ -127,6 +133,10 @@ func makeAPIRouter(m metrics.Interface) (*httpapi.APIRouter, error) {
 	secretGetter := secrets.NewFromConfig(
 		&rest.Config{Host: config.Host},
 		viper.GetBool(insecureFlag))
-	router := httpapi.NewRouter(cf, secretGetter)
+	k8sClient, err := ctrlclient.New(config, ctrlclient.Options{})
+	if err != nil {
+		return nil, err
+	}
+	router := httpapi.NewRouter(cf, secretGetter, k8sClient)
 	return router, nil
 }
