@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 
 	argoV1aplha1 "github.com/argoproj/argo-cd/pkg/apis/application/v1alpha1"
 	gogit "github.com/go-git/go-git/v5"
@@ -308,8 +309,54 @@ func TestListApplications(t *testing.T) {
 	})
 
 	var createOptions []ctrlclient.CreateOption
-	app, _ := testArgoApplication()
+	app, _ := testArgoApplication("testdata/application.yaml")
 	err = kc.Create(context.TODO(), app, createOptions...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	url := "https://github.com/test-repo/gitops.git?ref=HEAD"
+	req := makeClientRequest(t, "Bearer testing", fmt.Sprintf("%s/applications?url=%s", ts.URL, url))
+	res, err := ts.Client().Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assertJSONResponse(t, res, map[string]interface{}{
+		"applications": []interface{}{
+			map[string]interface{}{
+				"name":          "test-app",
+				"repo_url":      "https://github.com/test-repo/gitops.git",
+				"environments":  []interface{}{"dev"},
+				"sync_status":   []interface{}{"Synced"},
+				"last_deployed": []interface{}{time.Date(2021, time.Month(5), 15, 2, 12, 13, 0, time.UTC).Local().String()},
+			},
+		},
+	})
+}
+
+func TestListApplicationsWIthTwoApps(t *testing.T) {
+	err := argoV1aplha1.AddToScheme(scheme.Scheme)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	builder := fake.NewClientBuilder()
+	kc := builder.Build()
+
+	ts, _ := makeServer(t, func(router *APIRouter) {
+		router.k8sClient = kc
+	})
+
+	var createOptions []ctrlclient.CreateOption
+	app, _ := testArgoApplication("testdata/application.yaml")
+	err = kc.Create(context.TODO(), app, createOptions...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	app2, _ := testArgoApplication("testdata/application2.yaml")
+	err = kc.Create(context.TODO(), app2, createOptions...)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -326,7 +373,11 @@ func TestListApplications(t *testing.T) {
 			map[string]interface{}{
 				"name":         "test-app",
 				"repo_url":     "https://github.com/test-repo/gitops.git",
-				"environments": []interface{}{"dev"},
+				"environments": []interface{}{"dev", "production"},
+				"sync_status":  []interface{}{"Synced", "OutOfSync"},
+				"last_deployed": []interface{}{time.Date(2021, time.Month(5), 15, 2, 12, 13, 0, time.UTC).Local().String(),
+					time.Date(2021, time.Month(5), 16, 1, 10, 35, 0, time.UTC).Local().String(),
+				},
 			},
 		},
 	})
@@ -349,8 +400,8 @@ func TestListApplications_badURL(t *testing.T) {
 	assertHTTPError(t, resp, http.StatusBadRequest, "please provide a valid GitOps repo URL")
 }
 
-func testArgoApplication() (*argoV1aplha1.Application, error) {
-	applicationYaml, _ := ioutil.ReadFile("testdata/application.yaml")
+func testArgoApplication(appCr string) (*argoV1aplha1.Application, error) {
+	applicationYaml, _ := ioutil.ReadFile(appCr)
 	app := &argoV1aplha1.Application{}
 	err := yaml.Unmarshal(applicationYaml, app)
 	if err != nil {

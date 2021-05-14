@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	log "github.com/sirupsen/logrus"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sort"
 	"strings"
 
@@ -50,14 +51,27 @@ func applicationsToAppsResponse(appSet []*argoV1aplha1.Application, repoURL stri
 			continue
 		}
 
+		var lastDeployed metav1.Time
+		size := len(app.Status.History)
+		if size > 0 {
+			lastDeployed = app.Status.History[size-1].DeployedAt
+		}
+		var lastDeployedTime = lastDeployed.String()
+		if lastDeployed.IsZero() {
+			lastDeployedTime = ""
+		}
 		if appResp, ok := appsMap[appName]; !ok {
 			appsMap[appName] = appResponse{
 				Name:         appName,
 				RepoURL:      app.Spec.Source.RepoURL,
 				Environments: []string{app.Spec.Destination.Namespace},
+				SyncStatus:   []string{string(app.Status.Sync.Status)},
+				LastDeployed: []string{lastDeployedTime},
 			}
 		} else {
 			appResp.Environments = append(appResp.Environments, app.Spec.Destination.Namespace)
+			appResp.SyncStatus = append(appResp.SyncStatus, string(app.Status.Sync.Status))
+			appResp.LastDeployed = append(appResp.LastDeployed, lastDeployed.String())
 			appsMap[appName] = appResp
 		}
 	}

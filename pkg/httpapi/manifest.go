@@ -4,6 +4,8 @@ type appResponse struct {
 	Name         string   `json:"name,omitempty"`
 	RepoURL      string   `json:"repo_url,omitempty"`
 	Environments []string `json:"environments,omitempty"`
+	SyncStatus   []string `json:"sync_status,omitempty"`
+	LastDeployed []string `json:"last_deployed,omitempty"`
 }
 
 type appsResponse struct {
