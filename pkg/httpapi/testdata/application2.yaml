@@ -3,18 +3,19 @@ kind: Application
 metadata:
   labels:
     app.kubernetes.io/name: test-app
-  name: dev-test-app
+  name: production-test-app
   namespace: test-namespace
 spec:
   destination:
-    namespace: dev
+    namespace: production
     server: https://kubernetes.default.svc
   project: default
   source:
-    path: environments/dev/apps/app-taxi/overlays
+    path: environments/production/apps/app-taxi/overlays
     repoURL: https://github.com/test-repo/gitops.git
 status:
   history:
-    - deployedAt: "2021-05-15T02:12:13Z"
+    - deployedAt: "2021-05-10T01:10:35Z"
+    - deployedAt: "2021-05-16T01:10:35Z"
   sync:
-    status: Synced
+    status: OutOfSync
