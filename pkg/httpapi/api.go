@@ -51,6 +51,7 @@ func NewRouter(c git.ClientFactory, s secrets.SecretGetter, kc ctrlclient.Client
 	api.HandlerFunc(http.MethodGet, "/pipelines", api.GetPipelines)
 	api.HandlerFunc(http.MethodGet, "/applications", api.ListApplications)
 	api.HandlerFunc(http.MethodGet, "/environments/:env/application/:app", api.GetApplication)
+	api.HandlerFunc(http.MethodGet, "/environment/:env/application/:app", api.GetApplicationDetails)
 	return api
 }
 
@@ -199,6 +200,69 @@ func (a *APIRouter) ListApplications(w http.ResponseWriter, r *http.Request) {
 	}
 
 	marshalResponse(w, applicationsToAppsResponse(apps, parsedRepoURL.String()))
+}
+
+func (a *APIRouter) GetApplicationDetails(w http.ResponseWriter, r *http.Request) {
+	params := httprouter.ParamsFromContext(r.Context())
+	envName, appName := params.ByName("env"), params.ByName("app")
+	app := &argoV1aplha1.Application{}
+	var lastDeployed string
+
+	repoURL := strings.TrimSpace(r.URL.Query().Get("url"))
+	if repoURL == "" {
+		http.Error(w, "please provide a valid GitOps repo URL", http.StatusBadRequest)
+		return
+	}
+
+	parsedRepoURL, err := url.Parse(repoURL)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("failed to parse URL, error: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	parsedRepoURL.RawQuery = ""
+
+	appList := &argoV1aplha1.ApplicationList{}
+	var listOptions []ctrlclient.ListOption
+
+	listOptions = append(listOptions, ctrlclient.InNamespace(""), ctrlclient.MatchingFields{
+		"metadata.name": fmt.Sprintf("%s-%s", envName, appName),
+	})
+
+	err = a.k8sClient.List(r.Context(), appList, listOptions...)
+	if err != nil {
+		log.Printf("ERROR: failed to get application list: %v", err)
+		http.Error(w, fmt.Sprintf("failed to get list of application, err: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	for _, a := range appList.Items {
+		if a.Spec.Source.RepoURL == parsedRepoURL.String() {
+			app = &a
+		}
+	}
+
+	if app == nil {
+		log.Printf("ERROR: failed to get application %s: %v", appName, err)
+		http.Error(w, fmt.Sprintf("failed to get the application %s, err: %v", appName, err), http.StatusBadRequest)
+		return
+	}
+
+	if len(app.Status.History) > 0 {
+		t := app.Status.History[len(app.Status.History)-1].DeployedAt
+		if !t.IsZero() {
+			lastDeployed = t.String()
+		}
+	}
+
+	appEnv := map[string]interface{}{
+		"environment":  app.Spec.Destination.Namespace,
+		"cluster":      app.Spec.Destination.Server,
+		"lastDeployed": lastDeployed,
+		"status":       app.Status.Sync.Status,
+	}
+
+	marshalResponse(w, appEnv)
 }
 
 func (a *APIRouter) getAuthToken(ctx context.Context, req *http.Request) (string, error) {
