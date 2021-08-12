@@ -1,9 +1,15 @@
 package httpapi
 
 import (
+	"bytes"
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"log"
 	"net/http"
 	"net/url"
@@ -53,6 +59,12 @@ func NewRouter(c git.ClientFactory, s secrets.SecretGetter, kc ctrlclient.Client
 	api.HandlerFunc(http.MethodGet, "/environments/:env/application/:app", api.GetApplication)
 	api.HandlerFunc(http.MethodGet, "/environment/:env/application/:app", api.GetApplicationDetails)
 	return api
+}
+
+type RevisionMeta struct {
+	Author   string `json:"author"`
+	Message  string `json:"message"`
+	Revision string `json:"revision"`
 }
 
 // GetPipelines fetches and returns the pipeline body.
@@ -206,7 +218,7 @@ func (a *APIRouter) GetApplicationDetails(w http.ResponseWriter, r *http.Request
 	params := httprouter.ParamsFromContext(r.Context())
 	envName, appName := params.ByName("env"), params.ByName("app")
 	app := &argoV1aplha1.Application{}
-	var lastDeployed string
+	var lastDeployed, revision string
 
 	repoURL := strings.TrimSpace(r.URL.Query().Get("url"))
 	if repoURL == "" {
@@ -249,10 +261,20 @@ func (a *APIRouter) GetApplicationDetails(w http.ResponseWriter, r *http.Request
 	}
 
 	if len(app.Status.History) > 0 {
+		revision = app.Status.History[len(app.Status.History)-1].Revision
 		t := app.Status.History[len(app.Status.History)-1].DeployedAt
 		if !t.IsZero() {
 			lastDeployed = t.String()
 		}
+	}
+
+	commitInfo, err := a.getCommitInfo(fmt.Sprintf("%s-%s", envName, appName), revision)
+	log.Printf("Retrieved revision metadata, METADATA %v", commitInfo)
+
+	revisionMeta := RevisionMeta{
+		Author:   strings.Split(commitInfo["author"], " ")[0],
+		Message:  commitInfo["message"],
+		Revision: revision,
 	}
 
 	appEnv := map[string]interface{}{
@@ -260,6 +282,7 @@ func (a *APIRouter) GetApplicationDetails(w http.ResponseWriter, r *http.Request
 		"cluster":      app.Spec.Destination.Server,
 		"lastDeployed": lastDeployed,
 		"status":       app.Status.Sync.Status,
+		"revision":     revisionMeta,
 	}
 
 	marshalResponse(w, appEnv)
@@ -316,4 +339,92 @@ func marshalResponse(w http.ResponseWriter, v interface{}) {
 	if err := json.NewEncoder(w).Encode(v); err != nil {
 		log.Printf("failed to encode response: %s", err)
 	}
+}
+
+func (a *APIRouter) getCommitInfo(app, revision string) (map[string]string, error) {
+	serverCertSecret := &corev1.Secret{}
+	err := a.k8sClient.Get(context.TODO(), types.NamespacedName{Namespace: "openshift-gitops", Name: "openshift-gitops-server"}, serverCertSecret)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	tlsConf := &tls.Config{}
+	rootCAPool := &x509.CertPool{}
+	sslServerCert := serverCertSecret.Data["tls.crt"]
+	if sslServerCert == nil {
+		tlsConf.InsecureSkipVerify = true
+	} else {
+		rootCAPool = x509.NewCertPool()
+		if ok := rootCAPool.AppendCertsFromPEM(sslServerCert); !ok {
+			return nil, fmt.Errorf("failed to load certificate")
+		}
+		tlsConf.RootCAs = rootCAPool
+	}
+
+	client := &http.Client{Transport: &http.Transport{TLSClientConfig: tlsConf}}
+
+	argocdCreds := &corev1.Secret{}
+	err = a.k8sClient.Get(context.TODO(), types.NamespacedName{Name: "openshift-gitops-cluster", Namespace: "openshift-gitops"}, argocdCreds)
+	if err != nil {
+		return nil, err
+	}
+
+	payload := map[string]string{
+		"username": "admin",
+		"password": string(argocdCreds.Data["admin.password"]),
+	}
+	payloadBytes, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := client.Post("https://openshift-gitops-server.openshift-gitops.svc.cluster.local/api/v1/session",
+		"application/json", bytes.NewBuffer(payloadBytes))
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	m := make(map[string]string)
+	err = json.Unmarshal(bodyBytes, m)
+	if err != nil {
+		return nil, err
+	}
+
+	if _, ok := m["token"]; !ok {
+		return nil, fmt.Errorf("failed to retrieve JWT from the api-server")
+	}
+
+	url := fmt.Sprintf("https://openshift-gitops-server.openshift-gitops.svc.cluster.local/api/v1/applications/%s/revisions/%s/metadata",
+		app, revision)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", m["token"]))
+	req.Header.Add("content-type", "application/json")
+
+	resp, err = client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+	bodyBytes, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal(bodyBytes, m)
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
 }
