@@ -4,12 +4,9 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
-	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"log"
 	"net/http"
 	"net/url"
@@ -17,6 +14,7 @@ import (
 
 	argoV1aplha1 "github.com/argoproj/argo-cd/pkg/apis/application/v1alpha1"
 	"github.com/julienschmidt/httprouter"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
@@ -32,7 +30,11 @@ var DefaultSecretRef = types.NamespacedName{
 	Namespace: "pipelines-app-delivery",
 }
 
-const defaultRef = "HEAD"
+const (
+	defaultRef             = "HEAD"
+	defaultArgoCDInstance  = "openshift-gitops"
+	defaultArgocdNamespace = "openshift-gitops"
+)
 
 // APIRouter is an HTTP API for accessing app configurations.
 type APIRouter struct {
@@ -222,12 +224,14 @@ func (a *APIRouter) GetApplicationDetails(w http.ResponseWriter, r *http.Request
 
 	repoURL := strings.TrimSpace(r.URL.Query().Get("url"))
 	if repoURL == "" {
+		log.Println("ERROR: please provide a valid GitOps repo URL")
 		http.Error(w, "please provide a valid GitOps repo URL", http.StatusBadRequest)
 		return
 	}
 
 	parsedRepoURL, err := url.Parse(repoURL)
 	if err != nil {
+		log.Printf("ERROR: failed to parse URL, error: %v", err)
 		http.Error(w, fmt.Sprintf("failed to parse URL, error: %v", err), http.StatusBadRequest)
 		return
 	}
@@ -268,8 +272,12 @@ func (a *APIRouter) GetApplicationDetails(w http.ResponseWriter, r *http.Request
 		}
 	}
 
-	commitInfo, err := a.getCommitInfo(fmt.Sprintf("%s-%s", envName, appName), revision)
-	log.Printf("Retrieved revision metadata, METADATA %v", commitInfo)
+	commitInfo, err := a.getCommitInfo(app.Name, revision)
+	if err != nil {
+		log.Printf("ERROR: failed to retrieve revision metadata for app %s: %v", appName, err)
+		http.Error(w, fmt.Sprintf("failed to retrieve revision metadata for app %s, err: %v", appName, err), http.StatusBadRequest)
+		return
+	}
 
 	revisionMeta := RevisionMeta{
 		Author:   strings.Split(commitInfo["author"], " ")[0],
@@ -342,32 +350,13 @@ func marshalResponse(w http.ResponseWriter, v interface{}) {
 }
 
 func (a *APIRouter) getCommitInfo(app, revision string) (map[string]string, error) {
-	serverCertSecret := &corev1.Secret{}
-	err := a.k8sClient.Get(context.TODO(), types.NamespacedName{Namespace: "openshift-gitops", Name: "openshift-gitops-server"}, serverCertSecret)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	tlsConf := &tls.Config{}
-	rootCAPool := &x509.CertPool{}
-	sslServerCert := serverCertSecret.Data["tls.crt"]
-	if sslServerCert == nil {
-		tlsConf.InsecureSkipVerify = true
-	} else {
-		rootCAPool = x509.NewCertPool()
-		if ok := rootCAPool.AppendCertsFromPEM(sslServerCert); !ok {
-			return nil, fmt.Errorf("failed to load certificate")
-		}
-		tlsConf.RootCAs = rootCAPool
-	}
-
-	client := &http.Client{Transport: &http.Transport{TLSClientConfig: tlsConf}}
-
+	client := &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}}
 	argocdCreds := &corev1.Secret{}
-	err = a.k8sClient.Get(context.TODO(), types.NamespacedName{Name: "openshift-gitops-cluster", Namespace: "openshift-gitops"}, argocdCreds)
+	err := a.k8sClient.Get(context.TODO(),
+		types.NamespacedName {
+			Name:      defaultArgoCDInstance + "-cluster",
+			Namespace: defaultArgocdNamespace,
+		}, argocdCreds)
 	if err != nil {
 		return nil, err
 	}
@@ -380,7 +369,9 @@ func (a *APIRouter) getCommitInfo(app, revision string) (map[string]string, erro
 	if err != nil {
 		return nil, err
 	}
-	resp, err := client.Post("https://openshift-gitops-server.openshift-gitops.svc.cluster.local/api/v1/session",
+
+	url := fmt.Sprintf("%s-server.%s.svc.cluster.local", defaultArgoCDInstance, defaultArgocdNamespace)
+	resp, err := client.Post(fmt.Sprintf("https://%s/api/v1/session", url),
 		"application/json", bytes.NewBuffer(payloadBytes))
 	if err != nil {
 		return nil, err
@@ -392,18 +383,17 @@ func (a *APIRouter) getCommitInfo(app, revision string) (map[string]string, erro
 	}
 
 	m := make(map[string]string)
-	err = json.Unmarshal(bodyBytes, m)
+	err = json.Unmarshal(bodyBytes, &m)
 	if err != nil {
 		return nil, err
 	}
 
-	if _, ok := m["token"]; !ok {
+	if token, ok := m["token"]; !ok || token == "" {
 		return nil, fmt.Errorf("failed to retrieve JWT from the api-server")
 	}
 
-	url := fmt.Sprintf("https://openshift-gitops-server.openshift-gitops.svc.cluster.local/api/v1/applications/%s/revisions/%s/metadata",
-		app, revision)
-	req, err := http.NewRequest("GET", url, nil)
+	u := fmt.Sprintf("https://%s/api/v1/applications/%s/revisions/%s/metadata", url, app, revision)
+	req, err := http.NewRequest("GET", u, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -422,7 +412,7 @@ func (a *APIRouter) getCommitInfo(app, revision string) (map[string]string, erro
 		return nil, err
 	}
 
-	err = json.Unmarshal(bodyBytes, m)
+	err = json.Unmarshal(bodyBytes, &m)
 	if err != nil {
 		return nil, err
 	}
