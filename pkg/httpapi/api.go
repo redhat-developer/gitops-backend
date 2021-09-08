@@ -36,6 +36,8 @@ const (
 	defaultArgocdNamespace = "openshift-gitops"
 )
 
+var baseURL = fmt.Sprintf("https://%s-server.%s.svc.cluster.local", defaultArgoCDInstance, defaultArgocdNamespace)
+
 // APIRouter is an HTTP API for accessing app configurations.
 type APIRouter struct {
 	*httprouter.Router
@@ -353,7 +355,7 @@ func (a *APIRouter) getCommitInfo(app, revision string) (map[string]string, erro
 	client := &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}}
 	argocdCreds := &corev1.Secret{}
 	err := a.k8sClient.Get(context.TODO(),
-		types.NamespacedName {
+		types.NamespacedName{
 			Name:      defaultArgoCDInstance + "-cluster",
 			Namespace: defaultArgocdNamespace,
 		}, argocdCreds)
@@ -370,8 +372,7 @@ func (a *APIRouter) getCommitInfo(app, revision string) (map[string]string, erro
 		return nil, err
 	}
 
-	url := fmt.Sprintf("%s-server.%s.svc.cluster.local", defaultArgoCDInstance, defaultArgocdNamespace)
-	resp, err := client.Post(fmt.Sprintf("https://%s/api/v1/session", url),
+	resp, err := client.Post(fmt.Sprintf("%s/api/v1/session", baseURL),
 		"application/json", bytes.NewBuffer(payloadBytes))
 	if err != nil {
 		return nil, err
@@ -392,7 +393,7 @@ func (a *APIRouter) getCommitInfo(app, revision string) (map[string]string, erro
 		return nil, fmt.Errorf("failed to retrieve JWT from the api-server")
 	}
 
-	u := fmt.Sprintf("https://%s/api/v1/applications/%s/revisions/%s/metadata", url, app, revision)
+	u := fmt.Sprintf("%s/api/v1/applications/%s/revisions/%s/metadata", baseURL, app, revision)
 	req, err := http.NewRequest("GET", u, nil)
 	if err != nil {
 		return nil, err

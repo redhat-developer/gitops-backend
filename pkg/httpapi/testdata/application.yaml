@@ -16,5 +16,6 @@ spec:
 status:
   history:
     - deployedAt: "2021-05-15T02:12:13Z"
+      revision: "123456789"
   sync:
     status: Synced
