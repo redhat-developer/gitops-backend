@@ -1,9 +1,12 @@
 package httpapi
 
 import (
+	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -11,6 +14,7 @@ import (
 
 	argoV1aplha1 "github.com/argoproj/argo-cd/pkg/apis/application/v1alpha1"
 	"github.com/julienschmidt/httprouter"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
@@ -26,7 +30,13 @@ var DefaultSecretRef = types.NamespacedName{
 	Namespace: "pipelines-app-delivery",
 }
 
-const defaultRef = "HEAD"
+const (
+	defaultRef             = "HEAD"
+	defaultArgoCDInstance  = "openshift-gitops"
+	defaultArgocdNamespace = "openshift-gitops"
+)
+
+var baseURL = fmt.Sprintf("https://%s-server.%s.svc.cluster.local", defaultArgoCDInstance, defaultArgocdNamespace)
 
 // APIRouter is an HTTP API for accessing app configurations.
 type APIRouter struct {
@@ -51,7 +61,14 @@ func NewRouter(c git.ClientFactory, s secrets.SecretGetter, kc ctrlclient.Client
 	api.HandlerFunc(http.MethodGet, "/pipelines", api.GetPipelines)
 	api.HandlerFunc(http.MethodGet, "/applications", api.ListApplications)
 	api.HandlerFunc(http.MethodGet, "/environments/:env/application/:app", api.GetApplication)
+	api.HandlerFunc(http.MethodGet, "/environment/:env/application/:app", api.GetApplicationDetails)
 	return api
+}
+
+type RevisionMeta struct {
+	Author   string `json:"author"`
+	Message  string `json:"message"`
+	Revision string `json:"revision"`
 }
 
 // GetPipelines fetches and returns the pipeline body.
@@ -201,6 +218,86 @@ func (a *APIRouter) ListApplications(w http.ResponseWriter, r *http.Request) {
 	marshalResponse(w, applicationsToAppsResponse(apps, parsedRepoURL.String()))
 }
 
+func (a *APIRouter) GetApplicationDetails(w http.ResponseWriter, r *http.Request) {
+	params := httprouter.ParamsFromContext(r.Context())
+	envName, appName := params.ByName("env"), params.ByName("app")
+	app := &argoV1aplha1.Application{}
+	var lastDeployed, revision string
+
+	repoURL := strings.TrimSpace(r.URL.Query().Get("url"))
+	if repoURL == "" {
+		log.Println("ERROR: please provide a valid GitOps repo URL")
+		http.Error(w, "please provide a valid GitOps repo URL", http.StatusBadRequest)
+		return
+	}
+
+	parsedRepoURL, err := url.Parse(repoURL)
+	if err != nil {
+		log.Printf("ERROR: failed to parse URL, error: %v", err)
+		http.Error(w, fmt.Sprintf("failed to parse URL, error: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	parsedRepoURL.RawQuery = ""
+
+	appList := &argoV1aplha1.ApplicationList{}
+	var listOptions []ctrlclient.ListOption
+
+	listOptions = append(listOptions, ctrlclient.InNamespace(""), ctrlclient.MatchingFields{
+		"metadata.name": fmt.Sprintf("%s-%s", envName, appName),
+	})
+
+	err = a.k8sClient.List(r.Context(), appList, listOptions...)
+	if err != nil {
+		log.Printf("ERROR: failed to get application list: %v", err)
+		http.Error(w, fmt.Sprintf("failed to get list of application, err: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	for _, a := range appList.Items {
+		if a.Spec.Source.RepoURL == parsedRepoURL.String() {
+			app = &a
+		}
+	}
+
+	if app == nil {
+		log.Printf("ERROR: failed to get application %s: %v", appName, err)
+		http.Error(w, fmt.Sprintf("failed to get the application %s, err: %v", appName, err), http.StatusBadRequest)
+		return
+	}
+
+	if len(app.Status.History) > 0 {
+		revision = app.Status.History[len(app.Status.History)-1].Revision
+		t := app.Status.History[len(app.Status.History)-1].DeployedAt
+		if !t.IsZero() {
+			lastDeployed = t.String()
+		}
+	}
+
+	commitInfo, err := a.getCommitInfo(app.Name, revision)
+	if err != nil {
+		log.Printf("ERROR: failed to retrieve revision metadata for app %s: %v", appName, err)
+		http.Error(w, fmt.Sprintf("failed to retrieve revision metadata for app %s, err: %v", appName, err), http.StatusBadRequest)
+		return
+	}
+
+	revisionMeta := RevisionMeta{
+		Author:   strings.Split(commitInfo["author"], " ")[0],
+		Message:  commitInfo["message"],
+		Revision: revision,
+	}
+
+	appEnv := map[string]interface{}{
+		"environment":  app.Spec.Destination.Namespace,
+		"cluster":      app.Spec.Destination.Server,
+		"lastDeployed": lastDeployed,
+		"status":       app.Status.Sync.Status,
+		"revision":     revisionMeta,
+	}
+
+	marshalResponse(w, appEnv)
+}
+
 func (a *APIRouter) getAuthToken(ctx context.Context, req *http.Request) (string, error) {
 	token := AuthToken(ctx)
 	secret, ok := secretRefFromQuery(req.URL.Query())
@@ -252,4 +349,73 @@ func marshalResponse(w http.ResponseWriter, v interface{}) {
 	if err := json.NewEncoder(w).Encode(v); err != nil {
 		log.Printf("failed to encode response: %s", err)
 	}
+}
+
+func (a *APIRouter) getCommitInfo(app, revision string) (map[string]string, error) {
+	client := &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}}
+	argocdCreds := &corev1.Secret{}
+	err := a.k8sClient.Get(context.TODO(),
+		types.NamespacedName{
+			Name:      defaultArgoCDInstance + "-cluster",
+			Namespace: defaultArgocdNamespace,
+		}, argocdCreds)
+	if err != nil {
+		return nil, err
+	}
+
+	payload := map[string]string{
+		"username": "admin",
+		"password": string(argocdCreds.Data["admin.password"]),
+	}
+	payloadBytes, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := client.Post(fmt.Sprintf("%s/api/v1/session", baseURL),
+		"application/json", bytes.NewBuffer(payloadBytes))
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	m := make(map[string]string)
+	err = json.Unmarshal(bodyBytes, &m)
+	if err != nil {
+		return nil, err
+	}
+
+	if token, ok := m["token"]; !ok || token == "" {
+		return nil, fmt.Errorf("failed to retrieve JWT from the api-server")
+	}
+
+	u := fmt.Sprintf("%s/api/v1/applications/%s/revisions/%s/metadata", baseURL, app, revision)
+	req, err := http.NewRequest("GET", u, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", m["token"]))
+	req.Header.Add("content-type", "application/json")
+
+	resp, err = client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+	bodyBytes, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal(bodyBytes, &m)
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
 }

@@ -19,6 +19,8 @@ import (
 	"github.com/redhat-developer/gitops-backend/pkg/git"
 	"github.com/redhat-developer/gitops-backend/pkg/parser"
 	"github.com/redhat-developer/gitops-backend/test"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -398,6 +400,88 @@ func TestListApplications_badURL(t *testing.T) {
 	}
 
 	assertHTTPError(t, resp, http.StatusBadRequest, "please provide a valid GitOps repo URL")
+}
+
+func TestGetApplicationDetails(t *testing.T) {
+	err := argoV1aplha1.AddToScheme(scheme.Scheme)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	builder := fake.NewClientBuilder()
+	kc := builder.Build()
+
+	ts, _ := makeServer(t, func(router *APIRouter) {
+		router.k8sClient = kc
+	})
+
+	// create test ArgoCD Server to handle http requests
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		u := r.URL.String()
+		if strings.Contains(u, "session") {
+			m := map[string]string{
+				"token": "testing",
+			}
+			marshalResponse(w, m)
+		} else if strings.Contains(u, "metadata") {
+			m := map[string]string{
+				"author":  "test",
+				"message": "testMessage",
+			}
+			marshalResponse(w, m)
+		}
+	}))
+	defer server.Close()
+	tmp := baseURL
+	baseURL = server.URL
+
+	var createOptions []ctrlclient.CreateOption
+	app, _ := testArgoApplication("testdata/application.yaml")
+	// create argocd test-app
+	err = kc.Create(context.TODO(), app, createOptions...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// create argocd instance creds secret
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      defaultArgoCDInstance + "-cluster",
+			Namespace: defaultArgocdNamespace,
+		},
+		Data: map[string][]byte{
+			"admin.password": []byte("abc"),
+		},
+	}
+	err = kc.Create(context.TODO(), secret, createOptions...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	options := url.Values{
+		"url": []string{"https://github.com/test-repo/gitops.git"},
+	}
+	req := makeClientRequest(t, "Bearer testing",
+		fmt.Sprintf("%s/environment/%s/application/%s?%s", ts.URL, "dev", "test-app", options.Encode()))
+	res, err := ts.Client().Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assertJSONResponse(t, res, map[string]interface{}{
+		"cluster":      "https://kubernetes.default.svc",
+		"environment":  "dev",
+		"status":       "Synced",
+		"lastDeployed": time.Date(2021, time.Month(5), 15, 2, 12, 13, 0, time.UTC).Local().String(),
+		"revision": map[string]interface{}{
+			"author":   "test",
+			"message":  "testMessage",
+			"revision": "123456789",
+		},
+	})
+
+	//reset BaseURL
+	baseURL = tmp
 }
 
 func testArgoApplication(appCr string) (*argoV1aplha1.Application, error) {

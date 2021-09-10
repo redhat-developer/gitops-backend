@@ -39,7 +39,7 @@ func applicationsToAppsResponse(appSet []*argoV1aplha1.Application, repoURL stri
 
 	for _, app := range appSet {
 		if repoURL != strings.TrimSuffix(app.Spec.Source.RepoURL, ".git") {
-			log.Printf("repoURL[%v], doesn not match with Source Repo URL[%v]", repoURL, strings.TrimSuffix(app.Spec.Source.RepoURL, ".git"))
+			log.Printf("repoURL[%v], does not match with Source Repo URL[%v]", repoURL, strings.TrimSuffix(app.Spec.Source.RepoURL, ".git"))
 			continue
 		}
 		if app.ObjectMeta.Labels != nil {
