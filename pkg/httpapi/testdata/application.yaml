@@ -19,3 +19,49 @@ status:
       revision: "123456789"
   sync:
     status: Synced
+  resources:
+    - health:
+        status: Healthy
+      kind: Service
+      name: taxi
+      namespace: dev
+      status: Synced
+      version: v1
+    - group: apps
+      health:
+        status: Healthy
+      kind: Deployment
+      name: taxi
+      namespace: dev
+      status: Synced
+      version: v1
+    - group: route.openshift.io
+      kind: Route
+      name: taxi
+      namespace: dev
+      status: Synced
+      version: v1
+    - group: apps
+      health:
+        status: Missing
+      kind: Secret
+      name: testsecret
+      namespace: dev
+      status: OutOfSync
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+      name: pipelines-clusterrole
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+      name: pipelines-service-role-binding
+      status: Synced
+      version: v1
+    - group: rbac.authorization.k8s.io
+      kind: RoleBinding
+      name: argocd-admin
+      namespace: cicd
+      status: Synced
+      version: v1

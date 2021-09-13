@@ -34,6 +34,14 @@ const (
 	defaultRef             = "HEAD"
 	defaultArgoCDInstance  = "openshift-gitops"
 	defaultArgocdNamespace = "openshift-gitops"
+	kindService            = "Service"
+	kindDeployment         = "Deployment"
+	kindSecret             = "Secret"
+	kindSealedSecret       = "SealedSecret"
+	kindRoute              = "Route"
+	kindRoleBinding        = "RoleBinding"
+	kindClusterRole        = "ClusterRole"
+	kindClusterRoleBinding = "ClusterRoleBinding"
 )
 
 var baseURL = fmt.Sprintf("https://%s-server.%s.svc.cluster.local", defaultArgoCDInstance, defaultArgocdNamespace)
@@ -286,13 +294,70 @@ func (a *APIRouter) GetApplicationDetails(w http.ResponseWriter, r *http.Request
 		Message:  commitInfo["message"],
 		Revision: revision,
 	}
+	var envResources = make(map[string][]envHealthResource)
+	envResources[kindService] = make([]envHealthResource, 0)
+	envResources[kindDeployment] = make([]envHealthResource, 0)
+	envResources[kindSecret] = make([]envHealthResource, 0)
+	envResources[kindRoute] = make([]envHealthResource, 0)
+	envResources[kindRoleBinding] = make([]envHealthResource, 0)
+	envResources[kindClusterRole] = make([]envHealthResource, 0)
+	envResources[kindClusterRoleBinding] = make([]envHealthResource, 0)
 
+	for _, aResource := range app.Status.Resources {
+		switch aResource.Kind {
+		case kindService:
+			envResources[kindService] = append(envResources[kindService], envHealthResource{
+				Name:   aResource.Name,
+				Health: string(aResource.Health.Status),
+				Status: string(aResource.Status),
+			})
+		case kindDeployment:
+			envResources[kindDeployment] = append(envResources[kindDeployment], envHealthResource{
+				Name:   aResource.Name,
+				Health: string(aResource.Health.Status),
+				Status: string(aResource.Status),
+			})
+		case kindSecret, kindSealedSecret:
+			envResources[kindSecret] = append(envResources[kindSecret], envHealthResource{
+				Name:   aResource.Name,
+				Health: string(aResource.Health.Status),
+				Status: string(aResource.Status),
+			})
+		case kindRoute:
+			envResources[kindRoute] = append(envResources[kindRoute], envHealthResource{
+				Name:   aResource.Name,
+				Status: string(aResource.Status),
+			})
+		case kindRoleBinding:
+			envResources[kindRoleBinding] = append(envResources[kindRoleBinding], envHealthResource{
+				Name:   aResource.Name,
+				Status: string(aResource.Status),
+			})
+		case kindClusterRole:
+			envResources[kindClusterRole] = append(envResources[kindClusterRole], envHealthResource{
+				Name:   aResource.Name,
+				Status: string(aResource.Status),
+			})
+		case kindClusterRoleBinding:
+			envResources[kindClusterRoleBinding] = append(envResources[kindClusterRoleBinding], envHealthResource{
+				Name:   aResource.Name,
+				Status: string(aResource.Status),
+			})
+		}
+	}
 	appEnv := map[string]interface{}{
-		"environment":  app.Spec.Destination.Namespace,
-		"cluster":      app.Spec.Destination.Server,
-		"lastDeployed": lastDeployed,
-		"status":       app.Status.Sync.Status,
-		"revision":     revisionMeta,
+		"environment":         app.Spec.Destination.Namespace,
+		"cluster":             app.Spec.Destination.Server,
+		"lastDeployed":        lastDeployed,
+		"status":              app.Status.Sync.Status,
+		"revision":            revisionMeta,
+		"services":            envResources[kindService],
+		"secrets":             envResources[kindSecret],
+		"deployments":         envResources[kindDeployment],
+		"routes":              envResources[kindRoute],
+		"roleBindings":        envResources[kindRoleBinding],
+		"clusterRoles":        envResources[kindClusterRole],
+		"clusterRoleBindings": envResources[kindClusterRoleBinding],
 	}
 
 	marshalResponse(w, appEnv)
