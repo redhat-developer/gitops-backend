@@ -28,6 +28,12 @@ type application struct {
 	Services []service `json:"services,omitempty"`
 }
 
+type envHealthResource struct {
+	Name   string `json:"name,omitempty"`
+	Health string `json:"health,omitempty"`
+	Status string `json:"status,omitempty"`
+}
+
 func (e environment) findService(n string) *service {
 	for _, a := range e.Apps {
 		for _, s := range a.Services {

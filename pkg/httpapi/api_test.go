@@ -478,6 +478,31 @@ func TestGetApplicationDetails(t *testing.T) {
 			"message":  "testMessage",
 			"revision": "123456789",
 		},
+		"deployments": []interface{}{
+			map[string]interface{}{"health": string("Healthy"), "name": string("taxi"), "status": string("Synced")},
+		},
+		"secrets": []interface{}{
+			map[string]interface{}{
+				"health": string("Missing"),
+				"name":   string("testsecret"),
+				"status": string("OutOfSync"),
+			},
+		},
+		"services": []interface{}{
+			map[string]interface{}{"health": string("Healthy"), "name": string("taxi"), "status": string("Synced")},
+		},
+		"routes": []interface{}{
+			map[string]interface{}{"name": string("taxi"), "status": string("Synced")},
+		},
+		"clusterRoleBindings": []interface{}{
+			map[string]interface{}{"name": string("pipelines-service-role-binding"), "status": string("Synced")},
+		},
+		"clusterRoles": []interface{}{
+			map[string]interface{}{"name": string("pipelines-clusterrole"), "status": string("Synced")},
+		},
+		"roleBindings": []interface{}{
+			map[string]interface{}{"name": string("argocd-admin"), "status": string("Synced")},
+		},
 	})
 
 	//reset BaseURL
