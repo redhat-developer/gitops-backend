@@ -38,6 +38,7 @@ func applicationsToAppsResponse(appSet []*argoV1aplha1.Application, repoURL stri
 	repoURL = strings.TrimSuffix(repoURL, ".git")
 
 	for _, app := range appSet {
+		appName = "" // Reset at beginning of the loop so no duplicates are added
 		if repoURL != strings.TrimSuffix(app.Spec.Source.RepoURL, ".git") {
 			log.Printf("repoURL[%v], does not match with Source Repo URL[%v]", repoURL, strings.TrimSuffix(app.Spec.Source.RepoURL, ".git"))
 			continue
