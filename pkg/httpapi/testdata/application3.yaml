@@ -1,0 +1,148 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  labels:
+    app.kubernetes.io/instance: argo-app
+    app.kubernetes.io/name: app-taxi
+  name: dev-app-taxi
+  namespace: test-namespace
+spec:
+  destination:
+    namespace: dev
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    path: environments/dev/apps/app-taxi/overlays
+    repoURL: https://github.com/test-repo/gitops.git
+status:
+  health:
+    status: Healthy
+  history:
+    - deployStartedAt: "2022-04-19T18:19:50Z"
+      deployedAt: "2022-04-19T18:19:52Z"
+      id: 0
+      revision: e5585fcf22366e2d066e0936cbd8a0508756d02d
+      source:
+        path: environments/dev/apps/app-taxi/overlays
+        repoURL: https://github.com/test-repo/gitops.git
+    - deployStartedAt: "2022-04-21T14:14:25Z"
+      deployedAt: "2022-04-21T14:14:27Z"
+      id: 1
+      revision: e5585fcf22366e2d066e0936cbd8a0508756d02d
+      source:
+        path: environments/dev/apps/app-taxi/overlays
+        repoURL: https://github.com/test-repo/gitops.git
+    - deployStartedAt: "2022-04-21T14:16:46Z"
+      deployedAt: "2022-04-21T14:16:50Z"
+      id: 2
+      revision: 3f6965bd65d9294b8fec5d6e2dc3dad08e33a8fe
+      source:
+        path: environments/dev/apps/app-taxi/overlays
+        repoURL: https://github.com/test-repo/gitops.git
+    - deployStartedAt: "2022-04-21T14:16:50Z"
+      deployedAt: "2022-04-21T14:16:51Z"
+      id: 3
+      revision: e5585fcf22366e2d066e0936cbd8a0508756d02d
+      source:
+        path: environments/dev/apps/app-taxi/overlays
+        repoURL: https://github.com/test-repo/gitops.git
+    - deployStartedAt: "2022-04-21T14:17:48Z"
+      deployedAt: "2022-04-21T14:17:49Z"
+      id: 4
+      revision: 3f6965bd65d9294b8fec5d6e2dc3dad08e33a8fe
+      source:
+        path: environments/dev/apps/app-taxi/overlays
+        repoURL: https://github.com/test-repo/gitops.git
+    - deployStartedAt: "2022-04-22T17:11:29Z"
+      deployedAt: "2022-04-22T17:11:29Z"
+      id: 5
+      revision: a0c7298faead28f7f60a5106afbb18882ad220a7
+      source:
+        path: environments/dev/apps/app-taxi/overlays
+        repoURL: https://github.com/test-repo/gitops.git
+  operationState:
+    finishedAt: "2022-04-22T17:11:29Z"
+    message: successfully synced (all tasks run)
+    operation:
+      initiatedBy:
+        automated: true
+      retry:
+        limit: 5
+      sync:
+        prune: true
+        revision: a0c7298faead28f7f60a5106afbb18882ad220a7
+    phase: Succeeded
+    startedAt: "2022-04-22T17:11:29Z"
+    syncResult:
+      resources:
+        - group: ""
+          hookPhase: Running
+          kind: Service
+          message: service/taxi configured
+          name: taxi
+          namespace: dev
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: apps
+          hookPhase: Running
+          kind: Deployment
+          message: deployment.apps/taxi configured
+          name: taxi
+          namespace: dev
+          status: Synced
+          syncPhase: Sync
+          version: v1
+        - group: route.openshift.io
+          hookPhase: Running
+          kind: Route
+          message: route.route.openshift.io/taxi unchanged
+          name: taxi
+          namespace: dev
+          status: Synced
+          syncPhase: Sync
+          version: v1
+      revision: a0c7298faead28f7f60a5106afbb18882ad220a7
+      source:
+        path: environments/dev/apps/app-taxi/overlays
+        repoURL: https://github.com/test-repo/gitops.git
+  reconciledAt: "2022-04-28T18:36:56Z"
+  resources:
+    - health:
+        status: Healthy
+      kind: Service
+      name: taxi
+      namespace: dev
+      status: Synced
+      version: v1
+    - group: apps
+      health:
+        status: Healthy
+      kind: Deployment
+      name: taxi
+      namespace: dev
+      status: Synced
+      version: v1
+    - group: route.openshift.io
+      health:
+        message: Route is healthy
+        status: Healthy
+      kind: Route
+      name: taxi
+      namespace: dev
+      status: Synced
+      version: v1
+  sourceType: Kustomize
+  summary:
+    images:
+      - nginxinc/nginx-unprivileged:latest
+  sync:
+    comparedTo:
+      destination:
+        namespace: dev
+        server: https://kubernetes.default.svc
+      source:
+        path: environments/dev/apps/app-taxi/overlays
+        repoURL: https://github.com/test-repo/gitops.git
+    revision: a0c7298faead28f7f60a5106afbb18882ad220a7
+    status: Synced
