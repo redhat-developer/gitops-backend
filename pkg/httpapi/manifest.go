@@ -34,6 +34,15 @@ type envHealthResource struct {
 	Status string `json:"status,omitempty"`
 }
 
+type envHistory struct {
+	Author      string `json:"author,omitempty"`
+	Message     string `json:"message,omitempty"`
+	Revision    string `json:"revision,omitempty"`
+	Environment string `json:"environment,omitempty"`
+	RepoUrl     string `json:"repo_url,omitempty"`
+	DeployedAt  string `json:"deployed_at,omitempty"`
+}
+
 func (e environment) findService(n string) *service {
 	for _, a := range e.Apps {
 		for _, s := range a.Services {

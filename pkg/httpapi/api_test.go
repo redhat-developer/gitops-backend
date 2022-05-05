@@ -509,6 +509,129 @@ func TestGetApplicationDetails(t *testing.T) {
 	baseURL = tmp
 }
 
+func TestGetApplicationHistory(t *testing.T) {
+	err := argoV1aplha1.AddToScheme(scheme.Scheme)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	builder := fake.NewClientBuilder()
+	kc := builder.Build()
+
+	ts, _ := makeServer(t, func(router *APIRouter) {
+		router.k8sClient = kc
+	})
+
+	// create test ArgoCD Server to handle http requests
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		u := r.URL.String()
+		if strings.Contains(u, "session") {
+			m := map[string]string{
+				"token": "testing",
+			}
+			marshalResponse(w, m)
+		} else if strings.Contains(u, "metadata") {
+			m := map[string]string{
+				"author":  "test",
+				"message": "testMessage",
+			}
+			marshalResponse(w, m)
+		}
+	}))
+	defer server.Close()
+	tmp := baseURL
+	baseURL = server.URL
+
+	var createOptions []ctrlclient.CreateOption
+	app, _ := testArgoApplication("testdata/application3.yaml")
+	// create argocd test-app
+	err = kc.Create(context.TODO(), app, createOptions...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// create argocd instance creds secret
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      defaultArgoCDInstance + "-cluster",
+			Namespace: defaultArgocdNamespace,
+		},
+		Data: map[string][]byte{
+			"admin.password": []byte("abc"),
+		},
+	}
+	err = kc.Create(context.TODO(), secret, createOptions...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	options := url.Values{
+		"url": []string{"https://github.com/test-repo/gitops.git"},
+	}
+	req := makeClientRequest(t, "Bearer testing",
+		fmt.Sprintf("%s/history/environment/%s/application/%s?%s", ts.URL, "dev", "app-taxi", options.Encode()))
+	res, err := ts.Client().Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println("history res is ", res)
+
+	want := []envHistory{
+		{
+			Author:      "test",
+			Message:     "testMessage",
+			Revision:    "a0c7298faead28f7f60a5106afbb18882ad220a7",
+			Environment: "dev",
+			RepoUrl:     "https://github.com/test-repo/gitops.git",
+			DeployedAt:  time.Date(2022, time.Month(4), 22, 17, 11, 29, 0, time.UTC).Local().String(),
+		},
+		{
+			Author:      "test",
+			Message:     "testMessage",
+			Revision:    "3f6965bd65d9294b8fec5d6e2dc3dad08e33a8fe",
+			Environment: "dev",
+			RepoUrl:     "https://github.com/test-repo/gitops.git",
+			DeployedAt:  time.Date(2022, time.Month(4), 21, 14, 17, 49, 0, time.UTC).Local().String(),
+		},
+		{
+			Author:      "test",
+			Message:     "testMessage",
+			Revision:    "e5585fcf22366e2d066e0936cbd8a0508756d02d",
+			Environment: "dev",
+			RepoUrl:     "https://github.com/test-repo/gitops.git",
+			DeployedAt:  time.Date(2022, time.Month(4), 21, 14, 16, 51, 0, time.UTC).Local().String(),
+		},
+		{
+			Author:      "test",
+			Message:     "testMessage",
+			Revision:    "3f6965bd65d9294b8fec5d6e2dc3dad08e33a8fe",
+			Environment: "dev",
+			RepoUrl:     "https://github.com/test-repo/gitops.git",
+			DeployedAt:  time.Date(2022, time.Month(4), 21, 14, 16, 50, 0, time.UTC).Local().String(),
+		},
+		{
+			Author:      "test",
+			Message:     "testMessage",
+			Revision:    "e5585fcf22366e2d066e0936cbd8a0508756d02d",
+			Environment: "dev",
+			RepoUrl:     "https://github.com/test-repo/gitops.git",
+			DeployedAt:  time.Date(2022, time.Month(4), 21, 14, 14, 27, 0, time.UTC).Local().String(),
+		},
+		{
+			Author:      "test",
+			Message:     "testMessage",
+			Revision:    "e5585fcf22366e2d066e0936cbd8a0508756d02d",
+			Environment: "dev",
+			RepoUrl:     "https://github.com/test-repo/gitops.git",
+			DeployedAt:  time.Date(2022, time.Month(4), 19, 18, 19, 52, 0, time.UTC).Local().String(),
+		},
+	}
+	assertJSONResponseHistory(t, res, want)
+
+	//reset BaseURL
+	baseURL = tmp
+}
+
 func testArgoApplication(appCr string) (*argoV1aplha1.Application, error) {
 	applicationYaml, _ := ioutil.ReadFile(appCr)
 	app := &argoV1aplha1.Application{}
@@ -588,7 +711,7 @@ func makeServer(t *testing.T, opts ...routerOptionFunc) (*httptest.Server, *stub
 	return ts, sf.client
 }
 
-func assertJSONResponse(t *testing.T, res *http.Response, want map[string]interface{}) {
+func readBody(t *testing.T, res *http.Response) []byte {
 	t.Helper()
 	if res.StatusCode != http.StatusOK {
 		defer res.Body.Close()
@@ -609,9 +732,26 @@ func assertJSONResponse(t *testing.T, res *http.Response, want map[string]interf
 	if h := res.Header.Get("Access-Control-Allow-Origin"); h != "*" {
 		t.Fatalf("wanted '*' got %s", h)
 	}
+	return b
+}
+
+func assertJSONResponse(t *testing.T, res *http.Response, want map[string]interface{}) {
+	b := readBody(t, res)
 	got := map[string]interface{}{}
 
-	err = json.Unmarshal(b, &got)
+	err := json.Unmarshal(b, &got)
+	if err != nil {
+		t.Fatalf("failed to parse %s: %s", b, err)
+	}
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Fatalf("JSON response failed:\n%s", diff)
+	}
+}
+
+func assertJSONResponseHistory(t *testing.T, res *http.Response, want []envHistory) {
+	b := readBody(t, res)
+	got := make([]envHistory, 0)
+	err := json.Unmarshal(b, &got)
 	if err != nil {
 		t.Fatalf("failed to parse %s: %s", b, err)
 	}
