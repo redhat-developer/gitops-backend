@@ -39,3 +39,5 @@ This token is used to authenticate the Kube client request to load the secret by
 
 The `token` field in the named secret will be extracted and used to authenticate
 the request to the upstream Git hosting service.
+
+Checking CI tests
