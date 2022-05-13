@@ -70,6 +70,7 @@ func NewRouter(c git.ClientFactory, s secrets.SecretGetter, kc ctrlclient.Client
 	api.HandlerFunc(http.MethodGet, "/applications", api.ListApplications)
 	api.HandlerFunc(http.MethodGet, "/environments/:env/application/:app", api.GetApplication)
 	api.HandlerFunc(http.MethodGet, "/environment/:env/application/:app", api.GetApplicationDetails)
+	api.HandlerFunc(http.MethodGet, "/history/environment/:env/application/:app", api.GetApplicationHistory)
 	return api
 }
 
@@ -224,6 +225,80 @@ func (a *APIRouter) ListApplications(w http.ResponseWriter, r *http.Request) {
 	}
 
 	marshalResponse(w, applicationsToAppsResponse(apps, parsedRepoURL.String()))
+}
+
+func (a *APIRouter) GetApplicationHistory(w http.ResponseWriter, r *http.Request) {
+	params := httprouter.ParamsFromContext(r.Context())
+	envName, appName := params.ByName("env"), params.ByName("app")
+	app := &argoV1aplha1.Application{}
+
+	repoURL := strings.TrimSpace(r.URL.Query().Get("url"))
+	if repoURL == "" {
+		log.Println("ERROR: please provide a valid GitOps repo URL")
+		http.Error(w, "please provide a valid GitOps repo URL", http.StatusBadRequest)
+		return
+	}
+
+	parsedRepoURL, err := url.Parse(repoURL)
+	if err != nil {
+		log.Printf("ERROR: failed to parse URL, error: %v", err)
+		http.Error(w, fmt.Sprintf("failed to parse URL, error: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	parsedRepoURL.RawQuery = ""
+
+	appList := &argoV1aplha1.ApplicationList{}
+	var listOptions []ctrlclient.ListOption
+
+	listOptions = append(listOptions, ctrlclient.InNamespace(""), ctrlclient.MatchingFields{
+		"metadata.name": fmt.Sprintf("%s-%s", envName, appName),
+	})
+
+	err = a.k8sClient.List(r.Context(), appList, listOptions...)
+	if err != nil {
+		log.Printf("ERROR: failed to get application list: %v", err)
+		http.Error(w, fmt.Sprintf("failed to get list of application, err: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	for _, a := range appList.Items {
+		if a.Spec.Source.RepoURL == parsedRepoURL.String() {
+			app = &a
+		}
+	}
+
+	if app == nil {
+		log.Printf("ERROR: failed to get application %s: %v", appName, err)
+		http.Error(w, fmt.Sprintf("failed to get the application %s, err: %v", appName, err), http.StatusBadRequest)
+		return
+	}
+
+	var deployedTime, revision string
+	hist := app.Status.History
+	var historyList = make([]envHistory, 0)
+	for _, h := range hist {
+		revision = h.Revision
+		t := h.DeployedAt
+		if !t.IsZero() {
+			deployedTime = t.String()
+		}
+		commitInfo, err := a.getCommitInfo(app.Name, revision)
+		if err != nil {
+			log.Printf("ERROR: failed to retrieve revision metadata for app %s: %v", appName, err)
+			http.Error(w, fmt.Sprintf("failed to retrieve revision metadata for app %s, err: %v", appName, err), http.StatusBadRequest)
+		}
+		hist := envHistory{
+			Author:      commitInfo["author"],
+			Message:     commitInfo["message"],
+			Revision:    revision,
+			RepoUrl:     h.Source.RepoURL,
+			Environment: envName,
+			DeployedAt:  deployedTime,
+		}
+		historyList = append([]envHistory{hist}, historyList...)
+	}
+	marshalResponse(w, historyList)
 }
 
 func (a *APIRouter) GetApplicationDetails(w http.ResponseWriter, r *http.Request) {
