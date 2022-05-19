@@ -13,6 +13,7 @@ if [[ $(go fmt `go list ./... | grep -v vendor`) ]]; then
     echo "not well formatted sources are found"
     exit 1
 fi
+go version
 go mod tidy
 if [[ ! -z $(git status -s) ]]
 then
