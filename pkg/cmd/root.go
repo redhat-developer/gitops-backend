@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"crypto/tls"
 	"fmt"
 	"log"
 	"net/http"
@@ -63,12 +64,20 @@ func makeHTTPCmd() *cobra.Command {
 
 			listen := fmt.Sprintf(":%d", viper.GetInt(portFlag))
 			log.Printf("listening on %s", listen)
+
+			s := &http.Server{
+				Addr:         listen,
+				TLSNextProto: map[string]func(*http.Server, *tls.Conn, http.Handler){},
+			}
+
 			if viper.GetBool(noTLSFlag) {
 				log.Println("TLS connections disabled")
-				return http.ListenAndServe(listen, nil)
+				// return http.ListenAndServe(listen, nil)
+				return s.ListenAndServe()
 			}
 			log.Printf("Using TLS from %q and %q", viper.GetString(tlsCertFlag), viper.GetString(tlsKeyFlag))
-			return http.ListenAndServeTLS(listen, viper.GetString(tlsCertFlag), viper.GetString(tlsKeyFlag), nil)
+			// return http.ListenAndServeTLS(listen, viper.GetString(tlsCertFlag), viper.GetString(tlsKeyFlag), nil)
+			return s.ListenAndServeTLS(viper.GetString(tlsCertFlag), viper.GetString(tlsKeyFlag))
 		},
 	}
 
