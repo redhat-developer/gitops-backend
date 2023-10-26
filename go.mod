@@ -155,6 +155,7 @@ require (
 )
 
 replace (
+	github.com/go-logr/logr => github.com/go-logr/logr v0.4.0
 	go.opentelemetry.io/otel => go.opentelemetry.io/otel v0.13.0
 	k8s.io/api => k8s.io/api v0.25.15
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.25.15
@@ -170,6 +171,7 @@ replace (
 	k8s.io/controller-manager => k8s.io/controller-manager v0.25.15
 	k8s.io/cri-api => k8s.io/cri-api v0.25.15
 	k8s.io/csi-translation-lib => k8s.io/csi-translation-lib v0.25.15
+	k8s.io/klog/v2 => k8s.io/klog/v2 v2.8.0
 	k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.25.15
 	k8s.io/kube-controller-manager => k8s.io/kube-controller-manager v0.25.15
 	k8s.io/kube-proxy => k8s.io/kube-proxy v0.25.15
