@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"crypto/tls"
 	"fmt"
 	"log"
 	"net/http"
@@ -26,6 +27,7 @@ const (
 	tlsCertFlag  = "tls-cert"
 	tlsKeyFlag   = "tls-key"
 	noTLSFlag    = "no-tls"
+	enableHTTP2  = "enable-http2"
 )
 
 func init() {
@@ -63,12 +65,22 @@ func makeHTTPCmd() *cobra.Command {
 
 			listen := fmt.Sprintf(":%d", viper.GetInt(portFlag))
 			log.Printf("listening on %s", listen)
+
+			server := &http.Server{
+				Addr: listen,
+			}
+			// Disable HTTP/2 to mitigate CVE-2023-39325 & CVE-2023-44487
+			if !viper.GetBool(enableHTTP2) {
+				log.Printf("Disabled HTTP/2 protocol")
+				server.TLSNextProto = map[string]func(*http.Server, *tls.Conn, http.Handler){}
+			}
+
 			if viper.GetBool(noTLSFlag) {
 				log.Println("TLS connections disabled")
-				return http.ListenAndServe(listen, nil)
+				return server.ListenAndServe()
 			}
 			log.Printf("Using TLS from %q and %q", viper.GetString(tlsCertFlag), viper.GetString(tlsKeyFlag))
-			return http.ListenAndServeTLS(listen, viper.GetString(tlsCertFlag), viper.GetString(tlsKeyFlag), nil)
+			return server.ListenAndServeTLS(viper.GetString(tlsCertFlag), viper.GetString(tlsKeyFlag))
 		},
 	}
 
@@ -106,6 +118,13 @@ func makeHTTPCmd() *cobra.Command {
 		"do not attempt to read TLS certificates",
 	)
 	logIfError(viper.BindPFlag(noTLSFlag, cmd.Flags().Lookup(noTLSFlag)))
+
+	cmd.Flags().Bool(
+		enableHTTP2,
+		false,
+		"enable HTTP/2 for the server",
+	)
+	logIfError(viper.BindPFlag(enableHTTP2, cmd.Flags().Lookup(enableHTTP2)))
 	return cmd
 }
 
