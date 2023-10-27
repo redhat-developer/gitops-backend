@@ -1,4 +1,4 @@
-FROM openshift/origin-release:golang-1.19 AS build
+FROM openshift/origin-release:golang-1.20 AS build
 WORKDIR /go/src
 COPY . /go/src
 RUN GIT_COMMIT=$(git rev-parse HEAD) && \
