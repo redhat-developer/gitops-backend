@@ -67,13 +67,13 @@ func makeHTTPCmd() *cobra.Command {
 			log.Printf("listening on %s", listen)
 
 			server := &http.Server{
-				Addr:         listen,
+				Addr: listen,
 			}
 			// Disable HTTP/2 to mitigate CVE-2023-39325 & CVE-2023-44487
 			if !viper.GetBool(enableHTTP2) {
 				log.Printf("Disabled HTTP/2 protocol")
 				server.TLSNextProto = map[string]func(*http.Server, *tls.Conn, http.Handler){}
-			} 
+			}
 
 			if viper.GetBool(noTLSFlag) {
 				log.Println("TLS connections disabled")
@@ -122,7 +122,7 @@ func makeHTTPCmd() *cobra.Command {
 	cmd.Flags().Bool(
 		enableHTTP2,
 		false,
-		"enable HTTP/2 for the server. Disable by default",
+		"enable HTTP/2 for the server",
 	)
 	logIfError(viper.BindPFlag(enableHTTP2, cmd.Flags().Lookup(enableHTTP2)))
 	return cmd
