@@ -1,4 +1,4 @@
-FROM golang:1.21 AS build
+FROM golang:1.22 AS build
 WORKDIR /go/src
 COPY . /go/src
 RUN GIT_COMMIT=$(git rev-parse HEAD) && \
