@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	argoV1aplha1 "github.com/argoproj/argo-cd/pkg/apis/application/v1alpha1"
+	argoV1aplha1 "github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
 	gogit "github.com/go-git/go-git/v5"
 	"github.com/google/go-cmp/cmp"
 	"github.com/redhat-developer/gitops-backend/pkg/git"
