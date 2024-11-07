@@ -1,8 +1,14 @@
 module github.com/redhat-developer/gitops-backend
 
+<<<<<<< HEAD
 go 1.23.0
 
 toolchain go1.23.8
+=======
+go 1.22.3
+
+toolchain go1.22.6
+>>>>>>> 0869d72 (go mod tidy)
 
 require (
 	github.com/argoproj/argo-cd/v2 v2.12.3
