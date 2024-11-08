@@ -3,13 +3,14 @@ package gitfs
 import (
 	"fmt"
 	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/storer"
 	"github.com/go-git/go-git/v5/storage/memory"
-	"sigs.k8s.io/kustomize/pkg/fs"
+	fs "sigs.k8s.io/kustomize/kyaml/filesys"
 )
 
 // gitFS is an internal implementation of the Kustomize
@@ -134,6 +135,16 @@ func (g gitFS) Glob(pattern string) ([]string, error) {
 // WriteFile implements fs.FileSystem.
 func (g gitFS) WriteFile(name string, data []byte) error {
 	return errNotSupported("WriteFile")
+}
+
+// Walk implementation for fs.FileSystem
+func (g gitFS) Walk(path string, walkFn filepath.WalkFunc) error {
+	return errNotSupported("Walk")
+}
+
+// ReadDir implementation for fs.FileSystem
+func (g gitFS) ReadDir(path string)  ([]string, error) {
+	return []string{}, errNotSupported("ReadDir")
 }
 
 func errNotSupported(s string) error {
