@@ -143,7 +143,7 @@ func (g gitFS) Walk(path string, walkFn filepath.WalkFunc) error {
 }
 
 // ReadDir implementation for fs.FileSystem
-func (g gitFS) ReadDir(path string)  ([]string, error) {
+func (g gitFS) ReadDir(path string) ([]string, error) {
 	return []string{}, errNotSupported("ReadDir")
 }
 
