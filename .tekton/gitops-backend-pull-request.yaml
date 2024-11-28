@@ -33,9 +33,6 @@ spec:
   - name: build-platforms
     value:
     - linux/x86_64
-    - linux/arm64
-    - linux/ppc64le
-    - linux/s390x  
   - name: dockerfile
     value: .konflux/Containerfile.plugin
   pipelineSpec:
@@ -234,6 +231,8 @@ spec:
         - $(params.build-args[*])
       - name: BUILD_ARGS_FILE
         value: $(params.build-args-file)
+	  - name: TARGET_VERSION
+        value: '{{target_branch}}	
       - name: SOURCE_ARTIFACT
         value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
       - name: CACHI2_ARTIFACT

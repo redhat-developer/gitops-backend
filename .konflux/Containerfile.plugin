@@ -15,13 +15,9 @@ ENTRYPOINT ["./backend-http"]
 
 LABEL \
     name="openshift-gitops-1/gitops-rhel8" \
-    version=${CI_CONTAINER_VERSION} \
     License="Apache 2.0" \
     com.redhat.component="openshift-gitops-container" \
     com.redhat.delivery.appregistry="false" \
-    release=${CI_CONTAINER_RELEASE} \
-    upstream-version=${CI_UPSTREAM_VERSION} \
-    upstream-vcs-ref="${CI_GITOPS_BACKEND_UPSTREAM_COMMIT}" \
     upstream-vcs-type="git" \
     summary="Red Hat OpenShift GitOps Backend Service" \
     io.openshift.expose-services="" \
