@@ -12,7 +12,7 @@ require (
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/openshift/api v3.9.0+incompatible
 	github.com/prometheus/client_golang v1.17.0
-	github.com/sirupsen/logrus v1.9.0
+	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.1.1
 	github.com/spf13/viper v1.7.0
 	go.uber.org/zap v1.15.0
