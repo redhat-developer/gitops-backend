@@ -36,7 +36,7 @@ require (
 	github.com/argoproj/gitops-engine v0.3.1-0.20210325215106-1ce2acc845d2 // indirect
 	github.com/argoproj/pkg v0.9.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
-	github.com/bombsimon/logrusr v1.0.0 // indirect
+	github.com/bombsimon/logrusr v1.1.0 // indirect
 	github.com/bradleyfalzon/ghinstallation v1.1.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/chai2010/gettext-go v0.0.0-20170215093142-bf70f2a70fb1 // indirect
