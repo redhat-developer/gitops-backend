@@ -13,7 +13,7 @@ require (
 	github.com/openshift/api v3.9.0+incompatible
 	github.com/prometheus/client_golang v1.17.0
 	github.com/sirupsen/logrus v1.9.0
-	github.com/spf13/cobra v1.1.1
+	github.com/spf13/cobra v1.5.0
 	github.com/spf13/viper v1.7.0
 	go.uber.org/zap v1.15.0
 	k8s.io/api v0.21.0
@@ -34,7 +34,7 @@ require (
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
 	github.com/argoproj/gitops-engine v0.3.1-0.20210325215106-1ce2acc845d2 // indirect
-	github.com/argoproj/pkg v0.9.0 // indirect
+	github.com/argoproj/pkg v0.13.6 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bombsimon/logrusr v1.0.0 // indirect
 	github.com/bradleyfalzon/ghinstallation v1.1.1 // indirect
