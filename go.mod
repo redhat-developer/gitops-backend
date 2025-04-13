@@ -7,11 +7,11 @@ toolchain go1.22.5
 require (
 	github.com/argoproj/argo-cd v0.8.1-0.20210326223336-719d6a9c252e
 	github.com/go-git/go-git/v5 v5.13.1
-	github.com/google/go-cmp v0.6.0
+	github.com/google/go-cmp v0.7.0
 	github.com/jenkins-x/go-scm v1.5.151
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/openshift/api v3.9.0+incompatible
-	github.com/prometheus/client_golang v1.17.0
+	github.com/prometheus/client_golang v1.22.0
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/cobra v1.1.1
 	github.com/spf13/viper v1.7.0
@@ -38,7 +38,7 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bombsimon/logrusr v1.0.0 // indirect
 	github.com/bradleyfalzon/ghinstallation v1.1.1 // indirect
-	github.com/cespare/xxhash/v2 v2.2.0 // indirect
+	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/chai2010/gettext-go v0.0.0-20170215093142-bf70f2a70fb1 // indirect
 	github.com/cloudflare/circl v1.3.7 // indirect
 	github.com/cyphar/filepath-securejoin v0.3.6 // indirect
@@ -84,11 +84,11 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
-	github.com/klauspost/compress v1.15.9 // indirect
+	github.com/klauspost/compress v1.18.0 // indirect
+	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de // indirect
 	github.com/magiconair/properties v1.8.1 // indirect
 	github.com/mailru/easyjson v0.7.1 // indirect
-	github.com/matttproud/golang_protobuf_extensions/v2 v2.0.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.0 // indirect
 	github.com/mitchellh/mapstructure v1.3.2 // indirect
@@ -97,6 +97,7 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/monochromegane/go-gitignore v0.0.0-20200626010858-205db1a8cc00 // indirect
+	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pelletier/go-toml v1.6.0 // indirect
@@ -104,9 +105,9 @@ require (
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/prometheus/client_model v0.5.0 // indirect
-	github.com/prometheus/common v0.45.0 // indirect
-	github.com/prometheus/procfs v0.12.0 // indirect
+	github.com/prometheus/client_model v0.6.1 // indirect
+	github.com/prometheus/common v0.62.0 // indirect
+	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/robfig/cron v1.2.0 // indirect
 	github.com/russross/blackfriday v1.5.2 // indirect
 	github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3 // indirect
@@ -134,17 +135,16 @@ require (
 	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56 // indirect
 	golang.org/x/mod v0.19.0 // indirect
 	golang.org/x/net v0.33.0 // indirect
-	golang.org/x/oauth2 v0.12.0 // indirect
+	golang.org/x/oauth2 v0.24.0 // indirect
 	golang.org/x/sync v0.10.0 // indirect
-	golang.org/x/sys v0.28.0 // indirect
+	golang.org/x/sys v0.30.0 // indirect
 	golang.org/x/term v0.27.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	golang.org/x/tools v0.23.0 // indirect
-	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230530153820-e85fd2cbaebc // indirect
 	google.golang.org/grpc v1.55.0 // indirect
-	google.golang.org/protobuf v1.31.0 // indirect
+	google.golang.org/protobuf v1.36.5 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.57.0 // indirect
 	gopkg.in/src-d/go-billy.v4 v4.3.2 // indirect
@@ -196,4 +196,4 @@ replace (
 	k8s.io/sample-controller => k8s.io/sample-controller v0.21.0
 )
 
-replace github.com/prometheus/client_golang => github.com/prometheus/client_golang v1.17.0
+replace github.com/prometheus/client_golang => github.com/prometheus/client_golang v1.22.0
