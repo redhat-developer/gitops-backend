@@ -160,7 +160,7 @@ require (
 	k8s.io/kube-aggregator v0.20.4 // indirect
 	k8s.io/kube-openapi v0.0.0-20210305001622-591a79e4bda7 // indirect
 	k8s.io/kubectl v0.20.4 // indirect
-	k8s.io/kubernetes v1.21.0 // indirect
+	k8s.io/kubernetes v1.32.3 // indirect
 	k8s.io/utils v0.0.0-20210111153108-fddb29f9d009 // indirect
 	sigs.k8s.io/kustomize/api v0.8.5 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.10.15 // indirect
