@@ -465,7 +465,8 @@ spec:
       optional: true
     - name: netrc
       optional: true
-  taskRunTemplate: {}
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-gitops-backend
   workspaces:
   - name: git-auth
     secret:
