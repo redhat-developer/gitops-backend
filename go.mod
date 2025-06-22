@@ -7,7 +7,7 @@ toolchain go1.23.8
 require (
 	github.com/argoproj/argo-cd v0.8.1-0.20210326223336-719d6a9c252e
 	github.com/go-git/go-git/v5 v5.13.1
-	github.com/google/go-cmp v0.6.0
+	github.com/google/go-cmp v0.7.0
 	github.com/jenkins-x/go-scm v1.5.151
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/openshift/api v3.9.0+incompatible
@@ -69,7 +69,7 @@ require (
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/btree v1.0.0 // indirect
 	github.com/google/go-github/v29 v29.0.2 // indirect
-	github.com/google/go-querystring v1.0.0 // indirect
+	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/gofuzz v1.1.0 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/google/uuid v1.3.0 // indirect
