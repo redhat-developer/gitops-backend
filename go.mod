@@ -62,7 +62,7 @@ require (
 	github.com/go-openapi/spec v0.19.8 // indirect
 	github.com/go-openapi/swag v0.19.9 // indirect
 	github.com/go-redis/cache/v8 v8.2.1 // indirect
-	github.com/go-redis/redis/v8 v8.3.2 // indirect
+	github.com/go-redis/redis/v9 v9.11.0 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
