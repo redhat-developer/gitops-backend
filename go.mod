@@ -5,7 +5,7 @@ go 1.23.0
 toolchain go1.23.8
 
 require (
-	github.com/argoproj/argo-cd v0.8.1-0.20210326223336-719d6a9c252e
+	github.com/argoproj/argo-cd/v3 v3.0.12
 	github.com/go-git/go-git/v5 v5.13.1
 	github.com/google/go-cmp v0.6.0
 	github.com/jenkins-x/go-scm v1.5.151
