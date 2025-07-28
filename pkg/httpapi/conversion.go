@@ -1,12 +1,13 @@
 package httpapi
 
 import (
-	log "github.com/sirupsen/logrus"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sort"
 	"strings"
 
-	argoV1aplha1 "github.com/argoproj/argo-cd/pkg/apis/application/v1alpha1"
+	log "github.com/sirupsen/logrus"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	argoV1aplha1 "github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
 )
 
 // TODO: this should really import the config from the upstream and use it to

@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	argoV1aplha1 "github.com/argoproj/argo-cd/pkg/apis/application/v1alpha1"
+	argoV1aplha1 "github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
 	gogit "github.com/go-git/go-git/v5"
 	"github.com/google/go-cmp/cmp"
 	"github.com/redhat-developer/gitops-backend/pkg/git"
@@ -31,6 +31,18 @@ import (
 const (
 	testRef = "7638417db6d59f3c431d3e1f261cc637155684cd"
 )
+
+func makeTestClient() ctrlclient.Client {
+	_ = argoV1aplha1.AddToScheme(scheme.Scheme)
+	builder := fake.NewClientBuilder().WithIndex(
+		&argoV1aplha1.Application{},
+		"metadata.name",
+		func(o ctrlclient.Object) []string {
+			return []string{o.GetName()}
+		},
+	)
+	return builder.Build()
+}
 
 func TestGetPipelines(t *testing.T) {
 	ts, c := makeServer(t)
@@ -403,13 +415,8 @@ func TestListApplications_badURL(t *testing.T) {
 }
 
 func TestGetApplicationDetails(t *testing.T) {
-	err := argoV1aplha1.AddToScheme(scheme.Scheme)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	builder := fake.NewClientBuilder()
-	kc := builder.Build()
+	var err error
+	kc := makeTestClient()
 
 	ts, _ := makeServer(t, func(router *APIRouter) {
 		router.k8sClient = kc
@@ -510,13 +517,8 @@ func TestGetApplicationDetails(t *testing.T) {
 }
 
 func TestGetApplicationHistory(t *testing.T) {
-	err := argoV1aplha1.AddToScheme(scheme.Scheme)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	builder := fake.NewClientBuilder()
-	kc := builder.Build()
+	var err error
+	kc := makeTestClient()
 
 	ts, _ := makeServer(t, func(router *APIRouter) {
 		router.k8sClient = kc

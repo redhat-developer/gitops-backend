@@ -6,7 +6,7 @@ import (
 	"log"
 	"net/http"
 
-	argoV1aplha1 "github.com/argoproj/argo-cd/pkg/apis/application/v1alpha1"
+	argoV1aplha1 "github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"

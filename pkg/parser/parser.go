@@ -4,11 +4,9 @@ import (
 	"github.com/go-git/go-git/v5"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"sigs.k8s.io/kustomize/k8sdeps"
-	"sigs.k8s.io/kustomize/pkg/fs"
-	"sigs.k8s.io/kustomize/pkg/loader"
-	"sigs.k8s.io/kustomize/pkg/resource"
-	"sigs.k8s.io/kustomize/pkg/target"
+	"sigs.k8s.io/kustomize/api/krusty"
+	"sigs.k8s.io/kustomize/api/resource"
+	fs "sigs.k8s.io/kustomize/kyaml/filesys"
 
 	"github.com/redhat-developer/gitops-backend/pkg/gitfs"
 )
@@ -24,26 +22,17 @@ func ParseFromGit(path string, opts *git.CloneOptions) ([]*Resource, error) {
 }
 
 func parseConfig(path string, files fs.FileSystem) ([]*Resource, error) {
-	k8sfactory := k8sdeps.NewFactory()
-	ldr, err := loader.NewLoader(path, files)
+
+	// Run performs a kustomization.
+	// It reads given path from the given file system, interprets it as
+	// a kustomization.yaml file, perform the kustomization it represents,
+	// and return the resulting resources.
+	kt := krusty.MakeKustomizer(krusty.MakeDefaultOptions())
+	r, err := kt.Run(files, path)
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		err = ldr.Cleanup()
-		if err != nil {
-			panic(err)
-		}
-	}()
-	kt, err := target.NewKustTarget(ldr, k8sfactory.ResmapF, k8sfactory.TransformerF)
-	if err != nil {
-		return nil, err
-	}
-	r, err := kt.MakeCustomizedResMap()
-	if err != nil {
-		return nil, err
-	}
-	if len(r) == 0 {
+	if len(r.Resources()) == 0 {
 		return nil, nil
 	}
 
@@ -52,7 +41,7 @@ func parseConfig(path string, files fs.FileSystem) ([]*Resource, error) {
 		return nil, err
 	}
 	resources := []*Resource{}
-	for _, v := range r {
+	for _, v := range r.Resources() {
 		resources = append(resources, extractResource(conv, v))
 	}
 	return resources, nil
@@ -82,9 +71,10 @@ func extractResource(conv *unstructuredConverter, res *resource.Resource) *Resou
 }
 
 // convert converts a Kustomize resource into a generic Unstructured resource
-// which which the unstructured converter uses to create resources from.
+// which the unstructured converter uses to create resources from.
 func convert(r *resource.Resource) *unstructured.Unstructured {
+	res, _ := r.Map()
 	return &unstructured.Unstructured{
-		Object: r.Map(),
+		Object: res,
 	}
 }

@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"sigs.k8s.io/kustomize/pkg/fs"
+	fs "sigs.k8s.io/kustomize/kyaml/filesys"
 
 	"github.com/redhat-developer/gitops-backend/test"
 )

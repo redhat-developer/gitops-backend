@@ -1,5 +1,9 @@
 default: test
 
+.PHONY: build
+build:
+	go build -v ./...
+
 .PHONY: test
 test:
 	go test `go list ./... | grep -v test`
