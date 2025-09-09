@@ -1,6 +1,8 @@
 module github.com/redhat-developer/gitops-backend
 
-go 1.23
+go 1.23.0
+
+toolchain go1.23.8
 
 require (
 	github.com/argoproj/argo-cd/v2 v2.14.11
