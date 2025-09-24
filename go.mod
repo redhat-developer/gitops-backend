@@ -1,13 +1,13 @@
 module github.com/redhat-developer/gitops-backend
 
-go 1.23.0
+go 1.24.0
 
-toolchain go1.23.8
+toolchain go1.24.6
 
 require (
 	github.com/argoproj/argo-cd/v2 v2.14.11
 	github.com/go-git/go-git/v5 v5.13.2
-	github.com/google/go-cmp v0.6.0
+	github.com/google/go-cmp v0.7.0
 	github.com/jenkins-x/go-scm v1.14.43
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/openshift/api v0.0.0-20240906151052-5d963dce87aa
