@@ -1,3 +1,3 @@
 # Dockerfile to bootstrap build and test in openshift-ci
 
-FROM registry.ci.openshift.org/openshift/release:golang-1.24
+FROM quay.io/devtools_gitops/go-toolset:1.24.6
