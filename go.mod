@@ -10,7 +10,7 @@ require (
 	github.com/google/go-cmp v0.6.0
 	github.com/jenkins-x/go-scm v1.14.43
 	github.com/julienschmidt/httprouter v1.3.0
-	github.com/openshift/api v0.0.0-20240906151052-5d963dce87aa
+	github.com/openshift/api 1f788b8d634d
 	github.com/prometheus/client_golang v1.20.5
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.1
