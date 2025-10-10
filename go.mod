@@ -1,13 +1,13 @@
 module github.com/redhat-developer/gitops-backend
 
-go 1.23.0
+go 1.24.0
 
-toolchain go1.23.8
+toolchain go1.24.6
 
 require (
 	github.com/argoproj/argo-cd/v2 v2.14.11
 	github.com/go-git/go-git/v5 v5.13.2
-	github.com/google/go-cmp v0.6.0
+	github.com/google/go-cmp v0.7.0
 	github.com/jenkins-x/go-scm v1.14.43
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/openshift/api v0.0.0-20240906151052-5d963dce87aa
@@ -41,7 +41,7 @@ require (
 	github.com/bluekeyes/go-gitdiff v0.8.0 // indirect
 	github.com/bmatcuk/doublestar/v4 v4.7.1 // indirect
 	github.com/bombsimon/logrusr/v2 v2.0.1 // indirect
-	github.com/bradleyfalzon/ghinstallation/v2 v2.12.0 // indirect
+	github.com/bradleyfalzon/ghinstallation/v2 v2.17.0 // indirect
 	github.com/casbin/casbin/v2 v2.102.0 // indirect
 	github.com/casbin/govaluate v1.2.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
@@ -78,6 +78,7 @@ require (
 	github.com/google/btree v1.1.3 // indirect
 	github.com/google/gnostic-models v0.6.8 // indirect
 	github.com/google/go-github/v66 v66.0.0 // indirect
+	github.com/google/go-github/v75 v75.0.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
