@@ -1,21 +1,28 @@
 # See the OWNERS docs: https://git.k8s.io/community/contributors/guide/owners.md
 
 approvers:
-- sbose78
 - wtam2018
 - chetan-rns
 - jannfis
-- iam-veeramalla
+- jgwest
+- jopit
+- anandf
+- varshab1210
+- svghadi
+- adamsaleh
+- trdoyle81
 
 reviewers:
-- sbose78
 - wtam2018
 - chetan-rns
 - keithchong
-- ishitasequeira
 - jannfis
-- jopit
 - jgwest
-- iam-veeramalla
+- anandrkskd
+- trdoyle81
+- svghadi
+- varshab1210
+- adamsaleh
+- trdoyle81
+- Naveena-058
 - ranakan19
-
