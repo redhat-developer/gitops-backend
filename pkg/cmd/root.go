@@ -79,6 +79,11 @@ func makeHTTPCmd() *cobra.Command {
 				log.Println("TLS connections disabled")
 				return server.ListenAndServe()
 			}
+			tlsConfig, err := buildTLSConfig()
+			if err != nil {
+				return err
+			}
+			server.TLSConfig = tlsConfig
 			log.Printf("Using TLS from %q and %q", viper.GetString(tlsCertFlag), viper.GetString(tlsKeyFlag))
 			return server.ListenAndServeTLS(viper.GetString(tlsCertFlag), viper.GetString(tlsKeyFlag))
 		},
@@ -125,6 +130,26 @@ func makeHTTPCmd() *cobra.Command {
 		"enable HTTP/2 for the server",
 	)
 	logIfError(viper.BindPFlag(enableHTTP2, cmd.Flags().Lookup(enableHTTP2)))
+	cmd.Flags().String(
+		tlsMinVersionFlag,
+		"",
+		"minimum supported TLS version (1.2, 1.3)",
+	)
+	logIfError(viper.BindPFlag(tlsMinVersionFlag, cmd.Flags().Lookup(tlsMinVersionFlag)))
+
+	cmd.Flags().String(
+		tlsMaxVersionFlag,
+		"",
+		"maximum supported TLS version (1.2, 1.3)",
+	)
+	logIfError(viper.BindPFlag(tlsMaxVersionFlag, cmd.Flags().Lookup(tlsMaxVersionFlag)))
+
+	cmd.Flags().String(
+		tlsCipherSuitesFlag,
+		"",
+		"comma-separated list of TLS cipher suites",
+	)
+	logIfError(viper.BindPFlag(tlsCipherSuitesFlag, cmd.Flags().Lookup(tlsCipherSuitesFlag)))
 	return cmd
 }
 
