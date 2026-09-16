@@ -13,33 +13,35 @@ func TestTLSVersionName(t *testing.T) {
 	tests := []struct {
 		name     string
 		version  uint16
-		expected string
+		expected []string // Accept either variant due to map iteration randomness
 	}{
 		{
 			name:     "TLS1.1",
 			version:  tls.VersionTLS11,
-			expected: "1.1",
+			expected: []string{"1.1", "tls1.1"},
 		},
 		{
 			name:     "TLS1.2",
 			version:  tls.VersionTLS12,
-			expected: "1.2",
+			expected: []string{"1.2", "tls1.2"},
 		},
 		{
 			name:     "TLS1.3",
 			version:  tls.VersionTLS13,
-			expected: "1.3",
+			expected: []string{"1.3", "tls1.3"},
 		},
 		{
 			name:     "unknown",
 			version:  999,
-			expected: "unknown (999)",
+			expected: []string{"unknown (999)"},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.expected, TLSVersionName(tt.version))
+			result := TLSVersionName(tt.version)
+			assert.Contains(t, tt.expected, result,
+				"TLSVersionName returned %q, expected one of %v", result, tt.expected)
 		})
 	}
 }
