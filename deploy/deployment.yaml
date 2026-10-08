@@ -28,6 +28,8 @@ spec:
             value: "1.3"
           - name: TLS_CIPHER_SUITES
             value: ""
+          - name: TLS_CURVE_PREFERENCES
+            value: "X25519MLKEM768:X25519:CurveP256"
           volumeMounts:
             - mountPath: "/etc/gitops/ssl"
               name: backend-ssl
