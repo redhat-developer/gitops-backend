@@ -6,8 +6,6 @@ set -e
 set -x
 
 export PATH=$PATH:$GOPATH/bin
-# CI go-toolset is still on Go 1.26; allow downloading the go.mod toolchain (1.27+).
-export GOTOOLCHAIN=auto
 
 go env
 go mod vendor

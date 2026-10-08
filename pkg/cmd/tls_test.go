@@ -234,9 +234,13 @@ func TestParseTLSCurvePreferences(t *testing.T) {
 			},
 		},
 		{
-			name:     "post-quantum curves",
-			input:    tls.MLKEM1024.String() + ":" + tls.SecP384r1MLKEM1024.String(),
-			expected: []tls.CurveID{tls.MLKEM1024, tls.SecP384r1MLKEM1024},
+			name: "post-quantum curves",
+			input: tls.SecP256r1MLKEM768.String() + ":" +
+				tls.SecP384r1MLKEM1024.String(),
+			expected: []tls.CurveID{
+				tls.SecP256r1MLKEM768,
+				tls.SecP384r1MLKEM1024,
+			},
 		},
 		{
 			name:      "invalid curve",

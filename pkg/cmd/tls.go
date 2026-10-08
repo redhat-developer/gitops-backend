@@ -91,7 +91,6 @@ var allowedCurveNames = func() map[string]tls.CurveID {
 		tls.X25519MLKEM768,
 		tls.SecP256r1MLKEM768,
 		tls.SecP384r1MLKEM1024,
-		tls.MLKEM1024,
 		tls.X25519,
 		tls.CurveP256,
 		tls.CurveP384,
