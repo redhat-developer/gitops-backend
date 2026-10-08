@@ -89,8 +89,6 @@ func ParseTLSCiphers(ciphers string) ([]uint16, error) {
 var allowedCurveNames = func() map[string]tls.CurveID {
 	curves := []tls.CurveID{
 		tls.X25519MLKEM768,
-		tls.SecP256r1MLKEM768,
-		tls.SecP384r1MLKEM1024,
 		tls.X25519,
 		tls.CurveP256,
 		tls.CurveP384,
