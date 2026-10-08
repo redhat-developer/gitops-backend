@@ -9,6 +9,8 @@ set +x
 # show commands
 set -x
 export CI="prow"
+# CI go-toolset is still on Go 1.26; allow downloading the go.mod toolchain (1.27+).
+export GOTOOLCHAIN=auto
 go mod vendor
 
 export PATH="$PATH:$(pwd)"
