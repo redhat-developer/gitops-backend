@@ -150,6 +150,13 @@ func makeHTTPCmd() *cobra.Command {
 		"comma-separated list of TLS cipher suites",
 	)
 	logIfError(viper.BindPFlag(tlsCipherSuitesFlag, cmd.Flags().Lookup(tlsCipherSuitesFlag)))
+
+	cmd.Flags().String(
+		tlsCurvePreferencesFlag,
+		"",
+		"colon-separated list of TLS curve preferences (e.g. X25519MLKEM768:X25519:CurveP256)",
+	)
+	logIfError(viper.BindPFlag(tlsCurvePreferencesFlag, cmd.Flags().Lookup(tlsCurvePreferencesFlag)))
 	return cmd
 }
 

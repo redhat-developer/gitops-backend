@@ -205,18 +205,80 @@ func TestValidateTLSConfig(t *testing.T) {
 	}
 }
 
+func TestParseTLSCurvePreferences(t *testing.T) {
+	tests := []struct {
+		name      string
+		input     string
+		expected  []tls.CurveID
+		expectErr bool
+	}{
+		{
+			name:     "empty",
+			input:    "",
+			expected: nil,
+		},
+		{
+			name:     "single curve",
+			input:    tls.X25519.String(),
+			expected: []tls.CurveID{tls.X25519},
+		},
+		{
+			name: "multiple curves",
+			input: tls.X25519MLKEM768.String() + ":" +
+				tls.X25519.String() + ":" +
+				tls.CurveP256.String(),
+			expected: []tls.CurveID{
+				tls.X25519MLKEM768,
+				tls.X25519,
+				tls.CurveP256,
+			},
+		},
+		{
+			name:     "post-quantum curves",
+			input:    tls.MLKEM1024.String() + ":" + tls.SecP384r1MLKEM1024.String(),
+			expected: []tls.CurveID{tls.MLKEM1024, tls.SecP384r1MLKEM1024},
+		},
+		{
+			name:      "invalid curve",
+			input:     "INVALID_CURVE",
+			expectErr: true,
+		},
+		{
+			name:     "ignore empty entries",
+			input:    ":" + tls.X25519.String() + "::",
+			expected: []tls.CurveID{tls.X25519},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			curves, err := ParseTLSCurvePreferences(tt.input)
+
+			if tt.expectErr {
+				require.Error(t, err)
+				return
+			}
+
+			require.NoError(t, err)
+			assert.Equal(t, tt.expected, curves)
+		})
+	}
+}
+
 func TestBuildTLSConfig(t *testing.T) {
 	validCipher := tls.CipherSuites()[3]
 
 	tests := []struct {
-		name          string
-		minVersion    string
-		maxVersion    string
-		ciphers       string
-		expectedMin   uint16
-		expectedMax   uint16
-		expectedSuite []uint16
-		expectErr     bool
+		name           string
+		minVersion     string
+		maxVersion     string
+		ciphers        string
+		curves         string
+		expectedMin    uint16
+		expectedMax    uint16
+		expectedSuite  []uint16
+		expectedCurves []tls.CurveID
+		expectErr      bool
 	}{
 		{
 			name:        "defaults",
@@ -235,6 +297,11 @@ func TestBuildTLSConfig(t *testing.T) {
 			},
 		},
 		{
+			name:           "valid curves",
+			curves:         tls.X25519.String() + ":" + tls.CurveP256.String(),
+			expectedCurves: []tls.CurveID{tls.X25519, tls.CurveP256},
+		},
+		{
 			name:       "invalid min version",
 			minVersion: "1.0",
 			expectErr:  true,
@@ -247,6 +314,11 @@ func TestBuildTLSConfig(t *testing.T) {
 		{
 			name:      "invalid cipher",
 			ciphers:   "BAD_CIPHER",
+			expectErr: true,
+		},
+		{
+			name:      "invalid curve",
+			curves:    "BAD_CURVE",
 			expectErr: true,
 		},
 		{
@@ -271,6 +343,7 @@ func TestBuildTLSConfig(t *testing.T) {
 			viper.Set(tlsMinVersionFlag, tt.minVersion)
 			viper.Set(tlsMaxVersionFlag, tt.maxVersion)
 			viper.Set(tlsCipherSuitesFlag, tt.ciphers)
+			viper.Set(tlsCurvePreferencesFlag, tt.curves)
 
 			cfg, err := buildTLSConfig()
 
@@ -283,6 +356,7 @@ func TestBuildTLSConfig(t *testing.T) {
 			assert.Equal(t, tt.expectedMin, cfg.MinVersion)
 			assert.Equal(t, tt.expectedMax, cfg.MaxVersion)
 			assert.Equal(t, tt.expectedSuite, cfg.CipherSuites)
+			assert.Equal(t, tt.expectedCurves, cfg.CurvePreferences)
 		})
 	}
 }
