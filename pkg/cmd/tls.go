@@ -38,12 +38,16 @@ var tlsVersionMap = map[string]uint16{
 
 // TLSVersionName returns a human-readable name for a TLS version constant.
 func TLSVersionName(version uint16) string {
-	for name, v := range tlsVersionMap {
-		if v == version {
-			return name
-		}
+	switch version {
+	case tls.VersionTLS11:
+		return "1.1"
+	case tls.VersionTLS12:
+		return "1.2"
+	case tls.VersionTLS13:
+		return "1.3"
+	default:
+		return fmt.Sprintf("unknown (%d)", version)
 	}
-	return fmt.Sprintf("unknown (%d)", version)
 }
 
 // ParseTLSVersion parses a TLS version string (e.g. "1.2", "1.3", "TLS1.2") into a tls version constant.
