@@ -4,21 +4,25 @@ import (
 	"crypto/tls"
 	"fmt"
 	"log"
+	"maps"
+	"slices"
 	"strings"
 
 	"github.com/spf13/viper"
 )
 
 const (
-	tlsMinVersionFlag   = "tls-min-version"
-	tlsMaxVersionFlag   = "tls-max-version"
-	tlsCipherSuitesFlag = "tls-cipher-suites"
+	tlsMinVersionFlag       = "tls-min-version"
+	tlsMaxVersionFlag       = "tls-max-version"
+	tlsCipherSuitesFlag     = "tls-cipher-suites"
+	tlsCurvePreferencesFlag = "tls-curve-preferences"
 )
 
 type TLSConfig struct {
-	MinVersion string
-	MaxVersion string
-	Ciphers    string
+	MinVersion       string
+	MaxVersion       string
+	Ciphers          string
+	CurvePreferences string
 }
 
 // tlsVersionMap maps version strings to tls version constants.
@@ -34,12 +38,16 @@ var tlsVersionMap = map[string]uint16{
 
 // TLSVersionName returns a human-readable name for a TLS version constant.
 func TLSVersionName(version uint16) string {
-	for name, v := range tlsVersionMap {
-		if v == version {
-			return name
-		}
+	switch version {
+	case tls.VersionTLS11:
+		return "1.1"
+	case tls.VersionTLS12:
+		return "1.2"
+	case tls.VersionTLS13:
+		return "1.3"
+	default:
+		return fmt.Sprintf("unknown (%d)", version)
 	}
-	return fmt.Sprintf("unknown (%d)", version)
 }
 
 // ParseTLSVersion parses a TLS version string (e.g. "1.2", "1.3", "TLS1.2") into a tls version constant.
@@ -82,6 +90,53 @@ func ParseTLSCiphers(ciphers string) ([]uint16, error) {
 	return result, nil
 }
 
+var allowedCurveNames = func() map[string]tls.CurveID {
+	curves := []tls.CurveID{
+		tls.X25519MLKEM768,
+		tls.X25519,
+		tls.CurveP256,
+		tls.CurveP384,
+		tls.CurveP521,
+	}
+	allowed := make(map[string]tls.CurveID, len(curves))
+	for _, curve := range curves {
+		allowed[curve.String()] = curve
+	}
+	return allowed
+}()
+
+func parseCurvePreferences(names []string) ([]tls.CurveID, error) {
+	if len(names) == 0 {
+		return nil, nil
+	}
+	curves := make([]tls.CurveID, 0, len(names))
+	for _, name := range names {
+		if id, ok := allowedCurveNames[name]; ok {
+			curves = append(curves, id)
+		} else {
+			return nil, fmt.Errorf("unknown curve: %q (supported: %v)", name, slices.Sorted(maps.Keys(allowedCurveNames)))
+		}
+	}
+	return curves, nil
+}
+
+// ParseTLSCurvePreferences parses a colon-separated list of TLS curve preference names.
+// Returns nil if the input is empty.
+func ParseTLSCurvePreferences(curves string) ([]tls.CurveID, error) {
+	if curves == "" {
+		return nil, nil
+	}
+	var names []string
+	for _, name := range strings.Split(curves, ":") {
+		name = strings.TrimSpace(name)
+		if name == "" {
+			continue
+		}
+		names = append(names, name)
+	}
+	return parseCurvePreferences(names)
+}
+
 // ValidateTLSConfig validates the TLS configuration parameters.
 // It checks that:
 //   - The minimum TLS version is not greater than the maximum TLS version
@@ -118,9 +173,10 @@ func ValidateTLSConfig(minVersion, maxVersion uint16, cipherSuites []uint16) err
 
 func buildTLSConfig() (*tls.Config, error) {
 	cfg := TLSConfig{
-		MinVersion: viper.GetString(tlsMinVersionFlag),
-		MaxVersion: viper.GetString(tlsMaxVersionFlag),
-		Ciphers:    viper.GetString(tlsCipherSuitesFlag),
+		MinVersion:       viper.GetString(tlsMinVersionFlag),
+		MaxVersion:       viper.GetString(tlsMaxVersionFlag),
+		Ciphers:          viper.GetString(tlsCipherSuitesFlag),
+		CurvePreferences: viper.GetString(tlsCurvePreferencesFlag),
 	}
 
 	tlsCfg := &tls.Config{} //nolint:gosec
@@ -149,6 +205,12 @@ func buildTLSConfig() (*tls.Config, error) {
 		return nil, err
 	}
 	tlsCfg.CipherSuites = ciphers
+
+	curvePrefs, err := ParseTLSCurvePreferences(cfg.CurvePreferences)
+	if err != nil {
+		return nil, fmt.Errorf("invalid --%s: %w", tlsCurvePreferencesFlag, err)
+	}
+	tlsCfg.CurvePreferences = curvePrefs
 
 	return tlsCfg, nil
 }
